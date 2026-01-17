@@ -24,7 +24,6 @@ class SalaryDBHelper {
     FROM salary 
     LIMIT 1
   ''');
-   
 
     return (result.first['total'] ?? 0) as int;
   }

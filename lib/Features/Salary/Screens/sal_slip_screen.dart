@@ -19,6 +19,7 @@ class SalarySlipScreen extends StatefulWidget {
 
 class _SalarySlipScreenState extends State<SalarySlipScreen> {
   SalaryModel? _salary;
+  bool _loading = true;
   List<DeductionModel> _deductions = [];
   late SalarySlipDataSource _dataSource;
   late String _formattedDate;
@@ -36,8 +37,14 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
   Future<void> _loadData() async {
     _salary = await SalaryDBHelper().getSalary();
     _deductions = await DeductionDBHelper().getDeductions();
-    final now = DateTime.now();
 
+    if (_salary == null) {
+      _loading = false;
+      setState(() {});
+      return;
+    }
+
+    final now = DateTime.now();
     const months = [
       "Jan",
       "Feb",
@@ -52,10 +59,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
       "Nov",
       "Dec",
     ];
-
     _formattedDate = "${months[now.month - 1]} ${now.year}";
-
-    if (_salary == null) return;
 
     _gross =
         _salary!.basic +
@@ -74,6 +78,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
       totalDeduction: _totalDeductions,
     );
 
+    _loading = false;
     setState(() {});
   }
 
@@ -216,6 +221,10 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     if (_salary == null) {
       return const Scaffold(
         body: Center(child: Text("Please setup salary first")),
