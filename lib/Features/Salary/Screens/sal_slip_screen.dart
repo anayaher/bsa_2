@@ -263,7 +263,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
             "Save Salary",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -291,7 +291,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
                 "Salary Slip • $_formattedDate",
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
@@ -349,7 +349,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
                 "Sal In Hand : $_netPay",
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                   letterSpacing: 0.5,
@@ -460,7 +460,7 @@ class SalarySlipDataSource extends DataGridSource {
                 cell.value.toString(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
                   color: isEarning ? Colors.blue : Colors.red,
                 ),

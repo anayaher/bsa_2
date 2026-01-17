@@ -1,7 +1,7 @@
 import 'package:BSA/Features/Salary/Screens/sal_slip_screen.dart';
 import 'package:flutter/material.dart';
 
-class AnimatedSalaryCard extends StatelessWidget {
+class AnimatedSalaryCard extends StatefulWidget {
   final int totalSalary;
   final int totalDeduction;
   final int netSalary;
@@ -13,6 +13,12 @@ class AnimatedSalaryCard extends StatelessWidget {
     required this.netSalary,
   });
 
+  @override
+  State<AnimatedSalaryCard> createState() => _AnimatedSalaryCardState();
+}
+
+class _AnimatedSalaryCardState extends State<AnimatedSalaryCard> {
+  bool hideSalary = true;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -37,41 +43,54 @@ class AnimatedSalaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.payments_rounded, color: Colors.deepPurple, size: 28),
-              SizedBox(width: 10),
-              Text(
+            children: [
+              const Icon(
+                Icons.payments_rounded,
+                color: Colors.deepPurple,
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              const Text(
                 "Salary Overview",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 10),
+
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    hideSalary = !hideSalary;
+                  });
+                },
+                child:
+                    hideSalary
+                        ? Icon(Icons.visibility_off)
+                        : Icon(Icons.visibility),
               ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _salaryBox(
-                  title: "Total Salary",
-                  value: totalSalary,
-                  color: Colors.green.shade700,
-                  icon: Icons.trending_up_rounded,
-                ),
+              _salaryBox(
+                title: "Total Salary",
+                value: widget.totalSalary,
+                color: Colors.green.shade700,
+                icon: Icons.trending_up_rounded,
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: _salaryBox(
-                  title: "Deductions",
-                  value: totalDeduction,
-                  color: Colors.red.shade700,
-                  icon: Icons.trending_down_rounded,
-                ),
+              SizedBox(height: 4),
+              _salaryBox(
+                title: "Deductions",
+                value: widget.totalDeduction,
+                color: Colors.red.shade700,
+                icon: Icons.trending_down_rounded,
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
 
           _netSalaryBox(),
 
@@ -108,11 +127,12 @@ class AnimatedSalaryCard extends StatelessWidget {
   Widget _salaryBox({
     required String title,
     required int value,
+
     required Color color,
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(18),
@@ -137,20 +157,30 @@ class AnimatedSalaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 5),
 
           TweenAnimationBuilder<int>(
             tween: IntTween(begin: 0, end: value),
             duration: const Duration(milliseconds: 800),
             builder: (context, val, child) {
-              return Text(
-                "₹ ${_format(val)}",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              );
+              return hideSalary
+                  ? Text(
+                    "₹ •••••",
+                    key: const ValueKey('hidden'),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  )
+                  : Text(
+                    "₹ ${_format(val)}",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  );
             },
           ),
         ],
@@ -159,11 +189,12 @@ class AnimatedSalaryCard extends StatelessWidget {
   }
 
   Widget _netSalaryBox() {
-    final color = netSalary >= 0 ? Colors.blue.shade700 : Colors.red.shade700;
+    final color =
+        widget.netSalary >= 0 ? Colors.blue.shade700 : Colors.red.shade700;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [Colors.white, Colors.blue.shade50]),
         borderRadius: BorderRadius.circular(20),
@@ -182,20 +213,30 @@ class AnimatedSalaryCard extends StatelessWidget {
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
 
           TweenAnimationBuilder<int>(
-            tween: IntTween(begin: 0, end: netSalary),
+            tween: IntTween(begin: 0, end: widget.netSalary),
             duration: const Duration(milliseconds: 900),
             builder: (context, val, child) {
-              return Text(
-                "₹ ${_format(val)}",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              );
+              return hideSalary
+                  ? Text(
+                    "₹ •••••",
+                    key: const ValueKey('hidden'),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  )
+                  : Text(
+                    "₹ ${_format(val)}",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  );
             },
           ),
         ],
