@@ -7,6 +7,8 @@ import 'package:BSA/Features/Salary/db/deduction_db.dart';
 import 'package:BSA/Features/Salary/db/salary_db.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/Features/Vehicles/screens/vehicles_list_screen.dart';
+import 'package:BSA/Features/jamaKharcha/screens/add_payee.dart';
+import 'package:BSA/Features/jamaKharcha/screens/transaction_screen.dart';
 import 'package:BSA/Models/vehicle_expiry_model.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/services/local_data_storage.dart';
@@ -211,6 +213,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const DeductionScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock_reset),
+            title: const Text("Set Payee/Heads"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PayeeSetupScreen()),
               );
             },
           ),
@@ -470,7 +483,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: () => _comingSoon(),
+              onPressed:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => TransactionScreen(),
+                    ),
+                  ),
               child: const Text(
                 "View Full Jama-Kharcha",
                 style: TextStyle(fontSize: 16, color: Colors.white),

@@ -39,8 +39,9 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
     _deductions = await DeductionDBHelper().getDeductions();
 
     if (_salary == null) {
-      _loading = false;
-      setState(() {});
+      setState(() {
+        _loading = false;
+      });
       return;
     }
 
@@ -78,8 +79,9 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
       totalDeduction: _totalDeductions,
     );
 
-    _loading = false;
-    setState(() {});
+    setState(() {
+      _loading = false;
+    });
   }
 
   Future<void> _exportPdf() async {

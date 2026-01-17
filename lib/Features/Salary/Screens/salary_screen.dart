@@ -73,13 +73,13 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> {
 
   Future<void> _saveSalary() async {
     final salary = SalaryModel(
-      basic: int.parse(_basic.text),
-      daPercent: int.parse(_daPercent.text),
-      hraPercent: int.parse(_hraPercent.text),
-      daAmount: int.parse(_daAmount.text),
-      hraAmount: int.parse(_hraAmount.text),
-      ta: int.parse(_ta.text),
-      arrears: int.parse(_arrears.text),
+      basic: int.tryParse(_basic.text) ?? 0,
+      daPercent: int.tryParse(_daPercent.text) ?? 0,
+      hraPercent: int.tryParse(_hraPercent.text) ?? 0,
+      daAmount: int.tryParse(_daAmount.text) ?? 0,
+      hraAmount: int.tryParse(_hraAmount.text) ?? 0,
+      ta: int.tryParse(_ta.text) ?? 0,
+      arrears: int.tryParse(_arrears.text) ?? 0,
     );
 
     await SalaryDBHelper().saveSalary(salary);
