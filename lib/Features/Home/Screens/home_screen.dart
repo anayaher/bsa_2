@@ -1,10 +1,15 @@
+import 'package:BSA/Features/Home/widgets/salary_card.dart';
 import 'package:BSA/Features/Insurance/data/insurance_db.dart';
+import 'package:BSA/Features/Salary/Screens/deductions_screen.dart';
+import 'package:BSA/Features/Salary/Screens/sal_slip_screen.dart';
+import 'package:BSA/Features/Salary/Screens/salary_screen.dart';
+import 'package:BSA/Features/Salary/db/deduction_db.dart';
+import 'package:BSA/Features/Salary/db/salary_db.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/Features/Vehicles/screens/vehicles_list_screen.dart';
 import 'package:BSA/Models/vehicle_expiry_model.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/services/local_data_storage.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,13 +43,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final expiry = ref.watch(expiryProvider);
-    final expiredCount = expiry
-        .where(
-          (e) =>
-              e.pucStatus == ExpiryStatus.expired ||
-              e.insuranceStatus == ExpiryStatus.expired,
-        )
-        .length;
+    final expiredCount =
+        expiry
+            .where(
+              (e) =>
+                  e.pucStatus == ExpiryStatus.expired ||
+                  e.insuranceStatus == ExpiryStatus.expired,
+            )
+            .length;
     return Scaffold(
       appBar: AppBar(title: const Text("Home")),
       drawer: _buildAppDrawer(context),
@@ -55,10 +61,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            _jamaKharchaHighlightCard(), // 👈 ADD HERE
+            _salarySummaryCard(),
 
             const SizedBox(height: 20),
 
+            _jamaKharchaHighlightCard(), // 👈 ADD HERE
             // --------------- FEATURE CARDS -----------------
             Wrap(
               spacing: 16,
@@ -101,7 +108,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: Icons.payments,
                   color: Colors.purple.shade50,
                   iconColor: Colors.purple,
-                  onTap: () => _comingSoon(),
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SalarySlipScreen(),
+                        ),
+                      ),
                 ),
 
                 _featureCard(
@@ -118,6 +131,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _salarySummaryCard() {
+    return FutureBuilder(
+      future: Future.wait([
+        SalaryDBHelper().getTotalSalary(),
+        DeductionDBHelper().getTotalDeductions(),
+      ]),
+      builder: (context, AsyncSnapshot<List<int>> snapshot) {
+        final totalSalary = snapshot.data?[0] ?? 0;
+        final totalDeduction = snapshot.data?[1] ?? 0;
+        final netSalary = totalSalary - totalDeduction;
+
+        return AnimatedSalaryCard(
+          totalSalary: totalSalary,
+          totalDeduction: totalDeduction,
+          netSalary: netSalary,
+        );
+      },
     );
   }
 
@@ -157,6 +190,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () {
               Navigator.pop(context);
               _showResetPasswordDialog();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock_reset),
+            title: const Text("Set Salary"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SalarySetupScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock_reset),
+            title: const Text("Set Deductions"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DeductionScreen()),
+              );
             },
           ),
 
@@ -284,46 +339,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Reset Password"),
-        content: TextField(
-          controller: passCtrl,
-          obscureText: true,
-          maxLength: 4,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: "New 4-digit Password",
-            border: OutlineInputBorder(),
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Reset Password"),
+            content: TextField(
+              controller: passCtrl,
+              obscureText: true,
+              maxLength: 4,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: "New 4-digit Password",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final pass = passCtrl.text.trim();
+
+                  if (pass.length != 4) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Password must be 4 digits"),
+                      ),
+                    );
+                    return;
+                  }
+
+                  await LocalStorageService.savePassword(pass);
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Password Updated")),
+                  );
+                },
+                child: const Text("Save"),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final pass = passCtrl.text.trim();
-
-              if (pass.length != 4) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Password must be 4 digits")),
-                );
-                return;
-              }
-
-              await LocalStorageService.savePassword(pass);
-
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Password Updated")));
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
     );
   }
 
