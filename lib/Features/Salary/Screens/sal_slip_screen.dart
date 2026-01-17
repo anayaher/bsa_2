@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:BSA/Features/jamaKharcha/db/transaction_db.dart';
+import 'package:BSA/Features/jamaKharcha/models/transaction_model.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
@@ -32,6 +34,41 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  Future<void> _saveSalaryAsTransactions() async {
+    if (_salary == null) return;
+
+    // 1️⃣ Add gross salary as Income
+    await TransactionDBHelper().addTransaction(
+      TransactionModel(
+        amount: _gross.toDouble(),
+        type: 'Income',
+        payee: 'Salary',
+        head: 'Salary',
+        date: DateTime.now(),
+      ),
+    );
+
+    // 2️⃣ Add each deduction as Expense
+    for (var deduction in _deductions) {
+      await TransactionDBHelper().addTransaction(
+        TransactionModel(
+          amount: deduction.amount.toDouble(),
+          type: 'Expense',
+          payee: deduction.title,
+          head: deduction.title,
+          date: DateTime.now(),
+        ),
+      );
+    }
+
+    // Optional: show confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Salary & Deductions added to Transactions"),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -241,7 +278,10 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            onPressed: _exportPdf,
+            onPressed: () async {
+              await _exportPdf(); // Save PDF first
+              await _saveSalaryAsTransactions(); // Save transactions
+            },
           ),
         ],
       ),
@@ -266,7 +306,10 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
           ],
         ),
         child: FloatingActionButton.extended(
-          onPressed: _exportPdf,
+          onPressed: () async {
+            await _exportPdf(); // Save PDF first
+            await _saveSalaryAsTransactions(); // Save transactions
+          },
           backgroundColor: Colors.transparent,
           elevation: 0,
           icon: const Icon(Icons.save_alt, color: Colors.white),

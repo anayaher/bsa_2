@@ -258,18 +258,100 @@ class _TransactionScreenState extends State<TransactionScreen> {
             _loadTransactions();
           },
           child: Card(
-            child: ListTile(
-              leading: Icon(
-                tx.type == 'Income' ? Icons.arrow_upward : Icons.arrow_downward,
-                color: tx.type == 'Income' ? Colors.green : Colors.red,
+            elevation: 4,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors:
+                      tx.type == 'Income'
+                          ? [Colors.green.shade50, Colors.green.shade100]
+                          : [Colors.red.shade50, Colors.red.shade100],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              title: Text("${tx.payee} → ${tx.head}"),
-              subtitle: Text(
-                "${tx.type} • ₹${tx.amount} • ${DateFormat('yyyy-MM-dd').format(tx.date)}",
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit, color: Colors.indigo),
-                onPressed: () => _openAddTransactionSheet(editTx: tx),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                leading: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color:
+                        tx.type == 'Income'
+                            ? Colors.green.withOpacity(0.15)
+                            : Colors.red.withOpacity(0.15),
+                  ),
+                  child: Icon(
+                    tx.type == 'Income' ? Icons.upcoming : Icons.money_off,
+                    color: tx.type == 'Income' ? Colors.green : Colors.red,
+                    size: 26,
+                  ),
+                ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tx.payee,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx.head,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_month, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy').format(tx.date),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "₹${tx.amount.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: tx.type == 'Income' ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
