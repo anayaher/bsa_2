@@ -54,11 +54,10 @@ class SalaryDBHelper {
   Future<void> saveSalary(SalaryModel salary) async {
     final db = await database;
 
-    await db.insert(
-      'salary',
-      salary.toMap()..['arrears'] = salary.arrears,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('salary', {
+      'id': 1, // FORCE single record
+      ...salary.toMap(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<SalaryModel?> getSalary() async {
@@ -67,7 +66,7 @@ class SalaryDBHelper {
     final result = await db.query('salary', limit: 1);
 
     if (result.isNotEmpty) {
-      return SalaryModel.fromMap(result.first);
+      return SalaryModel.fromMap(result.last);
     }
     return null;
   }

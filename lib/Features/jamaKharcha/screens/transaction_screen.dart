@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+
 import '../db/payee_db.dart';
 import '../db/transaction_db.dart';
 import '../models/payee_model.dart';
@@ -16,8 +19,14 @@ class _TransactionScreenState extends State<TransactionScreen> {
   List<PayeeModel> _payees = [];
   List<PayeeModel> _heads = [];
   List<TransactionModel> _transactions = [];
+  bool _showSearch = false;
+
+  double _totalIncome = 0;
+  double _totalExpense = 0;
+  double _balance = 0;
 
   String _filterType = 'All';
+  String _filter = '';
   String _search = '';
   bool _loading = true;
 
@@ -39,12 +48,28 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Future<void> _loadTransactions() async {
     setState(() => _loading = true);
+
+    // Get filtered transactions
     final txs = await TransactionDBHelper().getTransactions(
       type: _filterType == 'All' ? null : _filterType,
       search: _search.isNotEmpty ? _search : null,
     );
+
+    // Compute filtered totals
+    double income = 0;
+    double expense = 0;
+    for (var tx in txs) {
+      if (tx.type == 'Income')
+        income += tx.amount;
+      else
+        expense += tx.amount;
+    }
+
     setState(() {
       _transactions = txs;
+      _totalIncome = income;
+      _totalExpense = expense;
+      _balance = income - expense;
       _loading = false;
     });
   }
@@ -222,9 +247,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       Navigator.pop(context);
                       _loadTransactions();
                     },
-                    child: Text(
-                      editTx == null ? "Add Transaction" : "Save Changes",
-                    ),
+                    child: Text(editTx == null ? "Add Transaction" : "Save"),
                   ),
                 ),
               ],
@@ -235,10 +258,50 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
+  /// PDF generation for filtered transactions
+  Future<void> _generatePdfReport() async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        build:
+            (context) => [
+              pw.Text("Transaction Report", style: pw.TextStyle(fontSize: 24)),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                "Filter: $_filterType ${_search.isNotEmpty ? ' | Search: $_search' : ''}",
+              ),
+              pw.Text("Total Income: ₹${_totalIncome.toStringAsFixed(2)}"),
+              pw.Text("Total Expense: ₹${_totalExpense.toStringAsFixed(2)}"),
+              pw.Text("Balance: ₹${_balance.toStringAsFixed(2)}"),
+              pw.SizedBox(height: 16),
+              pw.Table.fromTextArray(
+                headers: ['Date', 'Payee', 'Head', 'Type', 'Amount'],
+                data:
+                    _transactions
+                        .map(
+                          (tx) => [
+                            DateFormat('yyyy-MM-dd').format(tx.date),
+                            tx.payee,
+                            tx.head,
+                            tx.type,
+                            "₹${tx.amount.toStringAsFixed(2)}",
+                          ],
+                        )
+                        .toList(),
+              ),
+            ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+  }
+
+  /// Build transaction list
   Widget _buildTransactionList() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_transactions.isEmpty)
-      return const Center(child: Text("No transactions yet"));
+      return const Center(child: Text("No transactions"));
 
     return ListView.builder(
       itemCount: _transactions.length,
@@ -258,100 +321,70 @@ class _TransactionScreenState extends State<TransactionScreen> {
             _loadTransactions();
           },
           child: Card(
-            elevation: 4,
+            elevation: 3,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  colors:
-                      tx.type == 'Income'
-                          ? [Colors.green.shade50, Colors.green.shade100]
-                          : [Colors.red.shade50, Colors.red.shade100],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color:
+                    tx.type == 'Income'
+                        ? Colors.green.withOpacity(0.15)
+                        : Colors.red.withOpacity(0.15),
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                leading: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        tx.type == 'Income'
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.red.withOpacity(0.15),
-                  ),
-                  child: Icon(
-                    tx.type == 'Income' ? Icons.upcoming : Icons.money_off,
-                    color: tx.type == 'Income' ? Colors.green : Colors.red,
-                    size: 26,
-                  ),
-                ),
-                title: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        tx.payee,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        tx.head,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade700,
+                        DateFormat('EEE, dd MMM yyyy').format(tx.date),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_month, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat('dd MMM yyyy').format(tx.date),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      "₹${tx.amount.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: tx.type == 'Income' ? Colors.green : Colors.red,
-                      ),
+                  const SizedBox(height: 10),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  Text(
+                    tx.payee,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    tx.head,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Amount",
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      Text(
+                        "₹${tx.amount.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              tx.type == 'Income' ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -363,41 +396,140 @@ class _TransactionScreenState extends State<TransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Jama Kharcha"),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: "Search by Payee/Head",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (v) {
-                _search = v;
-                _loadTransactions();
-              },
+      backgroundColor: Colors.grey.shade100,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(_showSearch ? 160 : 80),
+        child: AppBar(
+          title: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Jama Kharcha"),
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              onPressed: _openAddTransactionSheet,
+              icon: const Icon(Icons.add, size: 30),
             ),
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              onPressed: _transactions.isEmpty ? null : _generatePdfReport,
+            ),
+            IconButton(
+              onPressed: () => setState(() => _showSearch = !_showSearch),
+              icon: Icon(_showSearch ? Icons.close : Icons.search),
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize:
+                (_showSearch)
+                    ? const Size.fromHeight(60)
+                    : const Size.fromHeight(0),
+            child:
+                (_showSearch)
+                    ? Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: "Search by Payee or Head",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (v) {
+                          _search = v;
+                          _loadTransactions();
+                        },
+                      ),
+                    )
+                    : const SizedBox.shrink(),
           ),
         ),
       ),
       body: Column(
         children: [
-          /// TYPE FILTER CHIPS
+          // 💰 BALANCE DASHBOARD
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 55, 186, 73),
+                    Color.fromARGB(255, 9, 148, 34),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromARGB(
+                      255,
+                      76,
+                      112,
+                      175,
+                    ).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    "Balance ₹${_balance.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _summaryTile(
+                        "Income",
+                        _totalIncome,
+                        Colors.green,
+                        Icons.arrow_downward,
+                      ),
+                      _summaryTile(
+                        "Expense",
+                        _totalExpense,
+                        Colors.red,
+                        Icons.arrow_upward,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // FILTER CHIPS
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children:
                   ['All', 'Income', 'Expense'].map((type) {
                     final selected = _filterType == type;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: ChoiceChip(
                         label: Text(type),
                         selected: selected,
+                        selectedColor: Colors.green,
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.white : Colors.black,
+                        ),
                         onSelected: (_) {
                           setState(() => _filterType = type);
                           _loadTransactions();
@@ -407,13 +539,32 @@ class _TransactionScreenState extends State<TransactionScreen> {
                   }).toList(),
             ),
           ),
+
+          // Transaction list
           Expanded(child: _buildTransactionList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddTransactionSheet(),
-        child: const Icon(Icons.add),
-      ),
+    );
+  }
+
+  Widget _summaryTile(String title, double amount, Color color, IconData icon) {
+    return Column(
+      children: [
+        const SizedBox(height: 4),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "₹${amount.toStringAsFixed(2)}",
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }

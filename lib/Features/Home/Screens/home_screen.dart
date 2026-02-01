@@ -67,7 +67,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             const SizedBox(height: 20),
 
-            _jamaKharchaHighlightCard(), // 👈 ADD HERE
+            _jamaKharchaHighlightCard(),
+
+            // 👈 ADD HERE
+            const SizedBox(height: 20),
             // --------------- FEATURE CARDS -----------------
             Wrap(
               spacing: 16,
@@ -178,10 +181,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   "Welcome!",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 ),
-                const Text(
-                  "User",
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
               ],
             ),
           ),
@@ -275,7 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Container(
             width: 175,
-            height: 150,
+            height: 180,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: color,
@@ -399,103 +398,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _jamaKharchaHighlightCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade100, Colors.green.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => TransactionScreen()));
+      },
+      child: Container(
+        width: double.infinity,
+
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade100, Colors.green.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.currency_rupee, color: Colors.green, size: 26),
-              SizedBox(width: 8),
-              Text(
-                "Jama - Kharcha",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text(
+                  "Jama - Kharcha",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // JAMA Highlight (Most Weight)
-              Expanded(
-                child: _amountBox(
+            Column(
+              children: [
+                // JAMA Highlight (Most Weight)
+                _amountBox(
                   "Jama",
                   totalJama,
                   Colors.green.shade700,
                   Icons.arrow_downward_rounded,
                 ),
-              ),
-              const SizedBox(width: 12),
 
-              // KHARCHA
-              Expanded(
-                child: _amountBox(
+                const SizedBox(height: 12),
+
+                // KHARCHA
+                _amountBox(
                   "Kharcha",
                   totalKharcha,
                   Colors.red.shade700,
                   Icons.arrow_upward_rounded,
                 ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(height: 12),
 
-              // BALANCE
-              Expanded(
-                child: _amountBox(
+                // BALANCE
+                _amountBox(
                   "Balance",
                   netBalance,
                   netBalance >= 0 ? Colors.blue.shade700 : Colors.red.shade700,
                   Icons.account_balance_wallet_rounded,
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => TransactionScreen(),
-                    ),
-                  ),
-              child: const Text(
-                "View Full Jama-Kharcha",
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -514,8 +490,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Row(
             children: [
@@ -524,16 +499,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: Colors.grey.shade600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(width: 6),
           Text(
-            "₹ ${value.toStringAsFixed(0)}",
+            " ${value.toStringAsFixed(0)}",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -546,7 +521,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _amountItem(String title, double value, Color color) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

@@ -21,105 +21,87 @@ class _AnimatedSalaryCardState extends State<AnimatedSalaryCard> {
   bool hideSalary = true;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.deepPurple.shade200, Colors.purple.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.25),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SalarySlipScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade200, Colors.purple.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.payments_rounded,
-                color: Colors.deepPurple,
-                size: 28,
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                "Salary Overview",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(width: 10),
-
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    hideSalary = !hideSalary;
-                  });
-                },
-                child:
-                    hideSalary
-                        ? Icon(Icons.visibility_off)
-                        : Icon(Icons.visibility),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 24),
-
-          Column(
-            children: [
-              _salaryBox(
-                title: "Total Salary",
-                value: widget.totalSalary,
-                color: Colors.green.shade700,
-                icon: Icons.trending_up_rounded,
-              ),
-              SizedBox(height: 4),
-              _salaryBox(
-                title: "Deductions",
-                value: widget.totalDeduction,
-                color: Colors.red.shade700,
-                icon: Icons.trending_down_rounded,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 4),
-
-          _netSalaryBox(),
-
-          const SizedBox(height: 22),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SalarySlipScreen()),
-                );
-              },
-              icon: const Icon(Icons.receipt_long, color: Colors.white),
-              label: const Text(
-                "View Salary Slip",
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.deepPurple.withOpacity(0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.payments_rounded,
+                  color: Colors.deepPurple,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  "Salary Overview",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: 10),
+
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      hideSalary = !hideSalary;
+                    });
+                  },
+                  child:
+                      hideSalary
+                          ? Icon(Icons.visibility_off)
+                          : Icon(Icons.visibility),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            Column(
+              children: [
+                _salaryBox(
+                  title: "Total Salary",
+                  value: widget.totalSalary,
+                  color: Colors.green.shade700,
+                  icon: Icons.trending_up_rounded,
+                ),
+                SizedBox(height: 4),
+                _salaryBox(
+                  title: "Deductions",
+                  value: widget.totalDeduction,
+                  color: Colors.red.shade700,
+                  icon: Icons.trending_down_rounded,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 4),
+
+            _netSalaryBox(),
+          ],
+        ),
       ),
     );
   }
@@ -176,7 +158,7 @@ class _AnimatedSalaryCardState extends State<AnimatedSalaryCard> {
                   : Text(
                     "₹ ${_format(val)}",
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
@@ -232,7 +214,7 @@ class _AnimatedSalaryCardState extends State<AnimatedSalaryCard> {
                   : Text(
                     "₹ ${_format(val)}",
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: color,
                     ),

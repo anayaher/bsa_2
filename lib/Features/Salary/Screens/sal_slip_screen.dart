@@ -1,11 +1,13 @@
 import 'dart:io';
+import 'package:BSA/Features/Salary/Screens/sal_slip_history.dart';
 import 'package:BSA/Features/jamaKharcha/db/transaction_db.dart';
 import 'package:BSA/Features/jamaKharcha/models/transaction_model.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 
 import 'package:BSA/Features/Salary/db/salary_db.dart';
 import 'package:BSA/Features/Salary/db/deduction_db.dart';
@@ -122,6 +124,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
   }
 
   Future<void> _exportPdf() async {
+    final borderPen = PdfPen(PdfColor(0, 0, 0), width: 0.8);
     final PdfDocument document = PdfDocument();
     final page = document.pages.add();
     final now = DateTime.now();
@@ -166,16 +169,62 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
     void drawRow(String a, String b, String c, String d, {bool bold = false}) {
       final font = bold ? headerFont : normalFont;
 
-      page.graphics.drawString(a, font, bounds: Rect.fromLTWH(20, y, 120, 20));
-      page.graphics.drawString(b, font, bounds: Rect.fromLTWH(150, y, 80, 20));
-      page.graphics.drawString(c, font, bounds: Rect.fromLTWH(260, y, 140, 20));
-      page.graphics.drawString(d, font, bounds: Rect.fromLTWH(420, y, 80, 20));
+      const double rowHeight = 22;
 
-      y += 22;
+      final rectA = Rect.fromLTWH(20, y, 120, rowHeight);
+      final rectB = Rect.fromLTWH(140, y, 90, rowHeight);
+      final rectC = Rect.fromLTWH(230, y, 150, rowHeight);
+      final rectD = Rect.fromLTWH(380, y, 90, rowHeight);
+
+      // Draw borders
+      page.graphics.drawRectangle(pen: borderPen, bounds: rectA);
+      page.graphics.drawRectangle(pen: borderPen, bounds: rectB);
+      page.graphics.drawRectangle(pen: borderPen, bounds: rectC);
+      page.graphics.drawRectangle(pen: borderPen, bounds: rectD);
+
+      // Draw text
+      page.graphics.drawString(
+        a,
+        font,
+        bounds: rectA,
+        format: PdfStringFormat(
+          alignment: PdfTextAlignment.center,
+          lineAlignment: PdfVerticalAlignment.middle,
+        ),
+      );
+      page.graphics.drawString(
+        b,
+        font,
+        bounds: rectB,
+        format: PdfStringFormat(
+          alignment: PdfTextAlignment.center,
+          lineAlignment: PdfVerticalAlignment.middle,
+        ),
+      );
+      page.graphics.drawString(
+        c,
+        font,
+        bounds: rectC,
+        format: PdfStringFormat(
+          alignment: PdfTextAlignment.center,
+          lineAlignment: PdfVerticalAlignment.middle,
+        ),
+      );
+      page.graphics.drawString(
+        d,
+        font,
+        bounds: rectD,
+        format: PdfStringFormat(
+          alignment: PdfTextAlignment.center,
+          lineAlignment: PdfVerticalAlignment.middle,
+        ),
+      );
+
+      y += rowHeight;
     }
 
     // ===== TABLE HEADER =====
-    drawRow("EARNINGS", "AMT", "DEDUCTIONS", "AMT", bold: true);
+    drawRow("SAL", "AMT", "DEDUCTION", "AMT", bold: true);
 
     final earnings = [
       ["Basic", _salary!.basic],
@@ -247,12 +296,14 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
     ];
 
     final today = DateTime.now();
-    final fileName =
-        "${today.day}-${months[today.month - 1]}-${today.year}.pdf";
+    final fileName = "${months[today.month - 1]}-${today.year}.pdf";
 
     // 3️⃣ Save PDF inside salaryslip folder
     final file = File("${salaryDir.path}/$fileName");
-    await file.writeAsBytes(bytes);
+    if (await file.exists()) {
+      await file.delete();
+    }
+    await file.writeAsBytes(bytes, flush: true);
 
     // 4️⃣ Open PDF
     OpenFile.open(file.path);
@@ -277,10 +328,13 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () async {
-              await _exportPdf(); // Save PDF first
-              await _saveSalaryAsTransactions(); // Save transactions
+            tooltip: 'Salary Slip History',
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SalSlipHistory()),
+              );
             },
           ),
         ],
@@ -369,19 +423,52 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
                   columnWidthMode: ColumnWidthMode.fill,
                   headerRowHeight: 48,
                   rowHeight: 44,
+
                   columns: [
-                    GridColumn(
-                      columnName: 'earnTitle',
-                      label: _header("EARNINGS"),
-                    ),
+                    GridColumn(columnName: 'earnTitle', label: _header("HEAD")),
                     GridColumn(columnName: 'earnAmt', label: _header("AMOUNT")),
                     GridColumn(
                       columnName: 'deductTitle',
-                      label: _header("DEDUCTIONS"),
+                      label: _header("HEAD"),
                     ),
                     GridColumn(
                       columnName: 'deductAmt',
                       label: _header("AMOUNT"),
+                    ),
+                  ],
+
+                  stackedHeaderRows: [
+                    StackedHeaderRow(
+                      cells: [
+                        StackedHeaderCell(
+                          columnNames: ['earnTitle', 'earnAmt'],
+                          child: Container(
+                            color: Colors.green.shade100,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'SALARY',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        StackedHeaderCell(
+                          columnNames: ['deductTitle', 'deductAmt'],
+                          child: Container(
+                            color: Colors.red.shade100,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'DEDUCTIONS',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -423,7 +510,7 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
       color: Colors.grey.shade200,
       child: Text(
         text,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
       ),
     );
   }
@@ -465,7 +552,9 @@ class SalarySlipDataSource extends DataGridSource {
       final d =
           i < deductions.length
               ? [
-                "${deductions[i].title.substring(0, 5)}...",
+                deductions[i].title.length > 5
+                    ? "${deductions[i].title.substring(0, 5)}..."
+                    : deductions[i].title,
                 deductions[i].amount,
               ]
               : ["", ""];
@@ -509,12 +598,12 @@ class SalarySlipDataSource extends DataGridSource {
 
             return Container(
               alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Text(
                 cell.value.toString(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
                   color: isEarning ? Colors.blue : Colors.red,
                 ),

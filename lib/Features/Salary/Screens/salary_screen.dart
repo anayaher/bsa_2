@@ -51,6 +51,9 @@ class _SalarySetupScreenState extends State<SalarySetupScreen> {
 
       _recalculate();
       setState(() {});
+    } else {
+      _arrears.text = '0';
+      setState(() {});
     }
   }
 

@@ -1,12 +1,12 @@
 import 'package:BSA/Features/Auth/Screens/login_screen.dart';
 import 'package:BSA/Features/Insurance/data/insurance_db.dart';
 import 'package:BSA/Features/Salary/Screens/deductions_screen.dart';
+import 'package:BSA/Features/Salary/Screens/sal_slip_history.dart';
 import 'package:BSA/Features/Salary/Screens/sal_slip_screen.dart';
 import 'package:BSA/Features/Salary/Screens/salary_screen.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/services/local_data_storage.dart';
-
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
