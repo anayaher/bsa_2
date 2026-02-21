@@ -57,6 +57,7 @@ class InsuranceDB {
   }
 
   Future<int> updateInsurance(InsuranceModel insurance) async {
+
     final db = await instance.database;
     return await db.update(
       'insurance',

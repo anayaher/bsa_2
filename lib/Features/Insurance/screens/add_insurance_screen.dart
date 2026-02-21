@@ -112,9 +112,10 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                 child: TextField(
                   readOnly: true,
                   decoration: InputDecoration(
-                    hintText: boughtDate != null
-                        ? boughtDate!.toIso8601String().split("T").first
-                        : "Select bought date",
+                    hintText:
+                        boughtDate != null
+                            ? boughtDate!.toIso8601String().split("T").first
+                            : "Select bought date",
                     suffixIcon: const Icon(Icons.calendar_month),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -140,9 +141,10 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                 child: TextField(
                   readOnly: true,
                   decoration: InputDecoration(
-                    hintText: validUpto != null
-                        ? validUpto!.toIso8601String().split("T").first
-                        : "Select expiry date",
+                    hintText:
+                        validUpto != null
+                            ? validUpto!.toIso8601String().split("T").first
+                            : "Select expiry date",
                     suffixIcon: const Icon(Icons.calendar_month),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -172,17 +174,18 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                   border: Border.all(color: Colors.grey.shade400),
                   color: Colors.grey.shade100,
                 ),
-                child: insurancePhoto == null
-                    ? const Center(
-                        child: Text(
-                          "Tap to upload photo",
-                          style: TextStyle(color: Colors.grey),
+                child:
+                    insurancePhoto == null
+                        ? const Center(
+                          child: Text(
+                            "Tap to upload photo",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                        : ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(insurancePhoto!, fit: BoxFit.cover),
                         ),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.file(insurancePhoto!, fit: BoxFit.cover),
-                      ),
               ),
             ),
 
@@ -196,6 +199,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
 
                   // Save insurance here
                   final newInsurance = InsuranceModel(
+                    id: widget.insurance?.id,
                     vehicleId: widget.vehicleId,
                     buyDate: boughtDate!.toIso8601String(),
                     validUpto: validUpto!.toIso8601String(),

@@ -192,15 +192,15 @@ class _SalSlipHistoryState extends State<SalSlipHistory> {
             ),
             actions: [
               TextButton(
-                child: const Text('Cancel'),
                 onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
               ),
               TextButton(
+                onPressed: () => Navigator.pop(context, true),
                 child: const Text(
                   'Delete',
                   style: TextStyle(color: Colors.red),
                 ),
-                onPressed: () => Navigator.pop(context, true),
               ),
             ],
           ),
@@ -208,7 +208,12 @@ class _SalSlipHistoryState extends State<SalSlipHistory> {
 
     if (confirm == true) {
       await file.delete();
-      (context as Element).markNeedsBuild();
+      if (!mounted) return;
+      _refresh();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Salary slip deleted')));
     }
   }
 }

@@ -92,338 +92,263 @@ class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
         elevation: 0,
         title: const Text("My Vehicles"),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xff1f1c2c), Color(0xff928dab)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xff1f1c2c), Color(0xff928dab)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: vehicles.isEmpty
-                          ? const Center(
-                              child: Text(
-                                "No vehicles added yet",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: vehicles.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final v = vehicles[index];
-                                final bool isExpired = expiry.any(
-                                  (e) => e.vehicleId == v.id,
-                                );
-                                return GestureDetector(
-                                  onTap: () => editVehicle(v),
-                                  onLongPress: () => showVehicleMenu(v),
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          gradient: LinearGradient(
-                                            colors: !isExpired
-                                                ? [
-                                                    Colors.white.withOpacity(
-                                                      0.20,
-                                                    ),
-                                                    Colors.white.withOpacity(
-                                                      0.05,
-                                                    ),
-                                                  ]
-                                                : [
-                                                    const Color.fromARGB(
-                                                      255,
-                                                      220,
-                                                      15,
-                                                      0,
-                                                    ).withOpacity(0.50),
-                                                    const Color.fromARGB(
-                                                      255,
-                                                      127,
-                                                      7,
-                                                      7,
-                                                    ).withOpacity(0.5),
-                                                  ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(
-                                              0.25,
-                                            ),
-                                            width: 1.2,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.07,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child:
+                            vehicles.isEmpty
+                                ? const Center(
+                                  child: Text(
+                                    "No vehicles added yet",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                                : ListView.separated(
+                                  itemCount: vehicles.length,
+                                  separatorBuilder:
+                                      (_, __) => const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final v = vehicles[index];
+                                    final bool isExpired = expiry.any(
+                                      (e) => e.vehicleId == v.id,
+                                    );
+                                    return GestureDetector(
+                                      onTap: () => editVehicle(v),
+                                      onLongPress: () => showVehicleMenu(v),
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              gradient: LinearGradient(
+                                                colors:
+                                                    !isExpired
+                                                        ? [
+                                                          Colors.white
+                                                              .withOpacity(
+                                                                0.20,
+                                                              ),
+                                                          Colors.white
+                                                              .withOpacity(
+                                                                0.05,
+                                                              ),
+                                                        ]
+                                                        : [
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            220,
+                                                            15,
+                                                            0,
+                                                          ).withOpacity(0.50),
+                                                          const Color.fromARGB(
+                                                            255,
+                                                            127,
+                                                            7,
+                                                            7,
+                                                          ).withOpacity(0.5),
+                                                        ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
                                               ),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 6),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(
+                                                  0.25,
+                                                ),
+                                                width: 1.2,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.07),
+                                                  blurRadius: 12,
+                                                  offset: const Offset(0, 6),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          child: BackdropFilter(
-                                            filter: ImageFilter.blur(
-                                              sigmaX: 12,
-                                              sigmaY: 12,
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(14),
-                                              child: Row(
-                                                children: [
-                                                  // Vehicle Image
-                                                  ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          14,
-                                                        ),
-                                                    child: Image.asset(
-                                                      "assets/images/bsa.png",
-                                                      height: 65,
-                                                      width: 65,
-                                                      fit: BoxFit.cover,
-                                                    ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              child: BackdropFilter(
+                                                filter: ImageFilter.blur(
+                                                  sigmaX: 12,
+                                                  sigmaY: 12,
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                    14,
                                                   ),
+                                                  child: Row(
+                                                    children: [
+                                                      // Vehicle Image
+                                                      ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              14,
+                                                            ),
+                                                        child: Image.asset(
+                                                          "assets/images/bsa.png",
+                                                          height: 65,
+                                                          width: 65,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
 
-                                                  const SizedBox(width: 16),
+                                                      const SizedBox(width: 16),
 
-                                                  // Vehicle info
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          v.vehicleName,
-                                                          style:
-                                                              const TextStyle(
+                                                      // Vehicle info
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              v.vehicleName,
+                                                              style: const TextStyle(
                                                                 fontSize: 19,
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w700,
-                                                                color: Colors
-                                                                    .white,
+                                                                color:
+                                                                    Colors
+                                                                        .white,
                                                               ),
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 5,
-                                                        ),
-                                                        Text(
-                                                          v.regNumber,
-                                                          style: TextStyle(
-                                                            fontSize: 17,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-
-                                                  // Maintenance button
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.white.withOpacity(0.20),
-                                              Colors.white.withOpacity(0.05),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(
-                                              0.25,
-                                            ),
-                                            width: 1.2,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.07,
-                                              ),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 6),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(14),
-                                            child: Row(
-                                              children: [
-                                                // Vehicle Image
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                  child: Image.file(
-                                                    File(v.vehiclePhoto),
-
-                                                    height: 65,
-                                                    width: 65,
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                // Vehicle info
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        v.vehicleName,
-                                                        style: const TextStyle(
-                                                          fontSize: 19,
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color: Colors.white,
+                                                            ),
+                                                            const SizedBox(
+                                                              height: 5,
+                                                            ),
+                                                            Text(
+                                                              v.regNumber,
+                                                              style: TextStyle(
+                                                                fontSize: 17,
+                                                                color: Colors
+                                                                    .white
+                                                                    .withOpacity(
+                                                                      0.8,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-                                                      const SizedBox(height: 5),
-                                                      Text(
-                                                        v.regNumber,
-                                                        style: TextStyle(
-                                                          fontSize: 17,
-                                                          color: Colors.white
-                                                              .withOpacity(0.8),
-                                                        ),
-                                                      ),
+
+                                                      // Maintenance button
                                                     ],
                                                   ),
                                                 ),
-                                              ],
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
 
-                                      // Menu button on top-right
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: PopupMenuButton<String>(
-                                          color: Colors.grey[900],
-                                          icon: const Icon(
-                                            Icons.more_vert,
-                                            color: Colors.white,
-                                          ),
-                                          onSelected: (value) {
-                                            if (value == 'maintenance') {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      MaintenanceListScreen(
-                                                        v.vehicleName,
-                                                        vehicleId: v.id!,
+                                          // Menu button on top-right
+                                          Positioned(
+                                            top: 4,
+                                            right: 4,
+                                            child: PopupMenuButton<String>(
+                                              color: Colors.grey[900],
+                                              icon: const Icon(
+                                                Icons.more_vert,
+                                                color: Colors.white,
+                                              ),
+                                              onSelected: (value) {
+                                                if (value == 'maintenance') {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (_) =>
+                                                              MaintenanceListScreen(
+                                                                v.vehicleName,
+                                                                vehicleId:
+                                                                    v.id!,
+                                                              ),
+                                                    ),
+                                                  );
+                                                }
+                                                if (value == 'insurance') {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (context) {
+                                                        return InsuranceListScreen(
+                                                          vehicleId: v.id!,
+                                                        );
+                                                      },
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              itemBuilder:
+                                                  (BuildContext context) => [
+                                                    const PopupMenuItem(
+                                                      value: 'maintenance',
+                                                      child: Text(
+                                                        'View Maintenance',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                        ),
                                                       ),
-                                                ),
-                                              );
-                                            }
-                                            if (value == 'insurance') {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (context) {
-                                                    return InsuranceListScreen(
-                                                      vehicleId: v.id!,
-                                                    );
-                                                  },
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          itemBuilder: (BuildContext context) =>
-                                              [
-                                                const PopupMenuItem(
-                                                  value: 'maintenance',
-                                                  child: Text(
-                                                    'View Maintenance',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
                                                     ),
-                                                  ),
-                                                ),
-                                                const PopupMenuItem(
-                                                  value: 'insurance',
-                                                  child: Text(
-                                                    'View Insurance',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
+                                                    const PopupMenuItem(
+                                                      value: 'insurance',
+                                                      child: Text(
+                                                        'View Insurance',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  ),
-                                                ),
-                                              ],
-                                        ),
+                                                  ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    const SizedBox(height: 20),
+                                    );
+                                  },
+                                ),
+                      ),
+                      const SizedBox(height: 20),
 
-                    // Add New Vehicle Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const VehicleRegistrationScreen(),
-                            ),
-                          ).then((_) => loadVehicles());
-                        },
-                        child: const Text(
-                          "Add New Vehicle",
-                          style: TextStyle(fontSize: 16),
+                      // Add New Vehicle Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => const VehicleRegistrationScreen(),
+                              ),
+                            ).then((_) => loadVehicles());
+                          },
+                          child: const Text(
+                            "Add New Vehicle",
+                            style: TextStyle(fontSize: 16),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 }

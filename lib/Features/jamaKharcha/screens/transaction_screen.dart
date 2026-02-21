@@ -1,4 +1,6 @@
+import 'package:BSA/Features/Home/Screens/home_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -8,14 +10,14 @@ import '../db/transaction_db.dart';
 import '../models/payee_model.dart';
 import '../models/transaction_model.dart';
 
-class TransactionScreen extends StatefulWidget {
+class TransactionScreen extends ConsumerStatefulWidget {
   const TransactionScreen({super.key});
 
   @override
-  State<TransactionScreen> createState() => _TransactionScreenState();
+  ConsumerState<TransactionScreen> createState() => _TransactionScreenState();
 }
 
-class _TransactionScreenState extends State<TransactionScreen> {
+class _TransactionScreenState extends ConsumerState<TransactionScreen> {
   List<PayeeModel> _payees = [];
   List<PayeeModel> _heads = [];
   List<TransactionModel> _transactions = [];
@@ -26,7 +28,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   double _balance = 0;
 
   String _filterType = 'All';
-  String _filter = '';
+
   String _search = '';
   bool _loading = true;
 
@@ -78,7 +80,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     final _amountController = TextEditingController(
       text: editTx != null ? editTx.amount.toString() : '',
     );
-    String _selectedType = editTx?.type ?? 'Income';
+    String _selectedType = editTx?.type ?? 'Expense';
     String? _selectedPayee =
         editTx?.payee ?? (_payees.isNotEmpty ? _payees.first.name : null);
     String? _selectedHead =
@@ -245,6 +247,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       }
 
                       Navigator.pop(context);
+                      ref.invalidate(homeProvider);
                       _loadTransactions();
                     },
                     child: Text(editTx == null ? "Add Transaction" : "Save"),
@@ -271,9 +274,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
               pw.Text(
                 "Filter: $_filterType ${_search.isNotEmpty ? ' | Search: $_search' : ''}",
               ),
-              pw.Text("Total Income: ₹${_totalIncome.toStringAsFixed(2)}"),
-              pw.Text("Total Expense: ₹${_totalExpense.toStringAsFixed(2)}"),
-              pw.Text("Balance: ₹${_balance.toStringAsFixed(2)}"),
+              pw.Text("Total Income: ${_totalIncome.toStringAsFixed(2)}"),
+              pw.Text("Total Expense: ${_totalExpense.toStringAsFixed(2)}"),
+              pw.Text("Balance: ${_balance.toStringAsFixed(2)}"),
               pw.SizedBox(height: 16),
               pw.Table.fromTextArray(
                 headers: ['Date', 'Payee', 'Head', 'Type', 'Amount'],
@@ -285,7 +288,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             tx.payee,
                             tx.head,
                             tx.type,
-                            "₹${tx.amount.toStringAsFixed(2)}",
+                            (tx.amount.toStringAsFixed(2)),
                           ],
                         )
                         .toList(),
@@ -307,19 +310,50 @@ class _TransactionScreenState extends State<TransactionScreen> {
       itemCount: _transactions.length,
       itemBuilder: (_, i) {
         final tx = _transactions[i];
+
         return Dismissible(
           key: ValueKey(tx.id),
           direction: DismissDirection.endToStart,
+
+          confirmDismiss: (_) async {
+            return await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text("Delete Transaction"),
+                    content: const Text(
+                      "Are you sure you want to delete this transaction?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("Delete"),
+                      ),
+                    ],
+                  ),
+            );
+          },
+
+          onDismissed: (_) async {
+            await TransactionDBHelper().deleteTransaction(tx.id!);
+            _loadTransactions();
+            ref.invalidate(homeProvider);
+          },
+
           background: Container(
             color: Colors.red,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: const Icon(Icons.delete, color: Colors.white),
           ),
-          onDismissed: (_) async {
-            await TransactionDBHelper().deleteTransaction(tx.id!);
-            _loadTransactions();
-          },
+
           child: Card(
             elevation: 3,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -352,20 +386,30 @@ class _TransactionScreenState extends State<TransactionScreen> {
                   ),
                   const SizedBox(height: 10),
                   const Divider(height: 1),
-                  const SizedBox(height: 10),
-                  Text(
-                    tx.payee,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                   const SizedBox(height: 4),
-                  Text(
-                    tx.head,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        tx.payee,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      Text(
+                        tx.head,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color.fromRGBO(66, 66, 66, 1),
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -410,10 +454,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
               onPressed: _openAddTransactionSheet,
               icon: const Icon(Icons.add, size: 30),
             ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              onPressed: _transactions.isEmpty ? null : _generatePdfReport,
-            ),
+
             IconButton(
               onPressed: () => setState(() => _showSearch = !_showSearch),
               icon: Icon(_showSearch ? Icons.close : Icons.search),
@@ -460,8 +501,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [
-                    Color.fromARGB(255, 55, 186, 73),
-                    Color.fromARGB(255, 9, 148, 34),
+                    Color.fromARGB(255, 33, 1, 51),
+                    Color.fromARGB(255, 0, 0, 0),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -491,7 +532,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Column(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _summaryTile(
@@ -526,7 +567,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       child: ChoiceChip(
                         label: Text(type),
                         selected: selected,
-                        selectedColor: Colors.green,
+                        selectedColor:
+                            _filterType == "Income"
+                                ? Colors.blue
+                                : _filterType == "Expense"
+                                ? Colors.red
+                                : Colors.green,
                         labelStyle: TextStyle(
                           color: selected ? Colors.white : Colors.black,
                         ),
@@ -548,18 +594,18 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Widget _summaryTile(String title, double amount, Color color, IconData icon) {
-    return Column(
+    return Row(
       children: [
         const SizedBox(height: 4),
         Text(
           title,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(width: 8),
         Text(
-          "₹${amount.toStringAsFixed(2)}",
-          style: const TextStyle(
-            color: Colors.white,
+          amount.toStringAsFixed(2),
+          style: TextStyle(
+            color: title == "Income" ? Colors.green : Colors.red,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),

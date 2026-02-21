@@ -11,15 +11,17 @@ class DeductionDBHelper {
   Database? _db;
 
   Future<int> getTotalDeductions() async {
-  final db = await this.db;
+    final db = await this.db;
 
-  final result = await db.rawQuery(
-    'SELECT SUM(amount) as total FROM deductions',
-  );
+    final result = await db.rawQuery(
+      'SELECT SUM(amount) as total FROM deductions',
+    );
 
-  final total = result.first['total'];
-  return total == null ? 0 : total as int;
-}
+    if (result.isEmpty) return 0;
+
+    final total = result.first['total'];
+    return total == null ? 0 : total as int;
+  }
 
   Future<Database> get db async {
     _db ??= await _initDb();

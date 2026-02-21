@@ -25,6 +25,8 @@ class SalaryDBHelper {
     LIMIT 1
   ''');
 
+  if(result.isEmpty) return 0;
+
     return (result.first['total'] ?? 0) as int;
   }
 

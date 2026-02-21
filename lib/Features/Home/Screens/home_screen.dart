@@ -1,12 +1,16 @@
+import 'package:BSA/Features/Home/Screens/home_provider.dart';
 import 'package:BSA/Features/Home/widgets/salary_card.dart';
 import 'package:BSA/Features/Insurance/data/insurance_db.dart';
+import 'package:BSA/Features/Reports/screens/record_main.dart';
 import 'package:BSA/Features/Salary/Screens/deductions_screen.dart';
 import 'package:BSA/Features/Salary/Screens/sal_slip_screen.dart';
 import 'package:BSA/Features/Salary/Screens/salary_screen.dart';
 import 'package:BSA/Features/Salary/db/deduction_db.dart';
 import 'package:BSA/Features/Salary/db/salary_db.dart';
+import 'package:BSA/Features/Savings/screens/savings_main_screen.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/Features/Vehicles/screens/vehicles_list_screen.dart';
+import 'package:BSA/Features/jamaKharcha/db/transaction_db.dart';
 import 'package:BSA/Features/jamaKharcha/screens/add_payee.dart';
 import 'package:BSA/Features/jamaKharcha/screens/transaction_screen.dart';
 import 'package:BSA/Models/vehicle_expiry_model.dart';
@@ -32,53 +36,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    Future.microtask(() async {
-      final vehicles = await VehicleDB.instance.fetchVehicles();
-      final insurances = await InsuranceDB.instance.fetchAllInsurances();
-      ref
-          .read(expiryProvider.notifier)
-          .checkAllExpiry(vehicles: vehicles, insurances: insurances);
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final expiry = ref.watch(expiryProvider);
-    final expiredCount =
-        expiry
-            .where(
-              (e) =>
-                  e.pucStatus == ExpiryStatus.expired ||
-                  e.insuranceStatus == ExpiryStatus.expired,
-            )
-            .length;
+    final homeAsync = ref.watch(homeProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Home")),
       drawer: _buildAppDrawer(context),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            _salarySummaryCard(),
+      body: homeAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text("Error: $e")),
+        data: (home) {
+          final expiredCount = home.expiredCount;
+          totalJama = home.totalJama;
+          totalKharcha = home.totalKharcha;
 
-            const SizedBox(height: 20),
-
-            _jamaKharchaHighlightCard(),
-
-            // 👈 ADD HERE
-            const SizedBox(height: 20),
-            // --------------- FEATURE CARDS -----------------
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _featureCard(
+                const SizedBox(height: 10),
+                _salarySummaryCard(),
+
+                const SizedBox(height: 20),
+                _jamaKharchaHighlightCard(),
+
+                const SizedBox(height: 20),
+                _vehicleCard(
                   badgeCount: expiredCount,
                   title: "Vehicles",
+                  isVehicleCard: true,
                   icon: Icons.two_wheeler,
                   color: Colors.blue.shade50,
                   iconColor: Colors.blue,
@@ -91,50 +82,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     );
                   },
                 ),
+                const SizedBox(height: 20),
 
-                _featureCard(
-                  title: "Jama-Kharcha",
+                _loanCard(
+                  title: "Loans",
                   icon: Icons.currency_rupee,
+                  isVehicleCard: true,
                   color: Colors.green.shade50,
                   iconColor: Colors.green,
                   onTap: () => _comingSoon(),
                 ),
-
-                _featureCard(
-                  title: "Income / Expense",
-                  icon: Icons.account_balance_wallet,
-                  color: Colors.orange.shade50,
-                  iconColor: Colors.orange,
-                  onTap: () => _comingSoon(),
-                ),
-
-                _featureCard(
-                  title: "Salary Manager",
-                  icon: Icons.payments,
-                  color: Colors.purple.shade50,
-                  iconColor: Colors.purple,
+                SizedBox(height: 20),
+                _loanCard(
+                  title: "Savings",
+                  icon: Icons.currency_rupee,
+                  isVehicleCard: true,
+                  color: Colors.green.shade50,
+                  iconColor: Colors.yellow.shade600,
                   onTap:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SalarySlipScreen(),
+                      () => {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return SavingsMainScreen();
+                            },
+                          ),
                         ),
-                      ),
+                      },
                 ),
 
-                _featureCard(
-                  title: "Reports",
-                  icon: Icons.bar_chart,
-                  color: Colors.red.shade50,
-                  iconColor: Colors.red,
-                  onTap: () => _comingSoon(),
-                ),
+                const SizedBox(height: 20),
               ],
             ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -226,6 +207,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.report),
+            title: const Text("Reports"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReportMainScreen()),
+              );
+            },
+          ),
 
           ListTile(
             leading: const Icon(Icons.color_lens),
@@ -262,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _featureCard({
     int? badgeCount,
     required String title,
+    bool isVehicleCard = false,
     required IconData icon,
     required Color color,
     required Color iconColor,
@@ -273,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Stack(
         children: [
           Container(
-            width: 175,
+            width: isVehicleCard ? double.infinity : 175,
             height: 180,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -327,6 +320,157 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _vehicleCard({
+    int? badgeCount,
+    required String title,
+    bool isVehicleCard = false,
+    required IconData icon,
+    required Color color,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Stack(
+        children: [
+          Container(
+            width: isVehicleCard ? double.infinity : 175,
+            height: 140,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, size: 45, color: iconColor),
+
+                    if (badgeCount != null && badgeCount > 0)
+                      Positioned(
+                        top: -6,
+                        right: -90,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loanCard({
+    int? badgeCount,
+    required String title,
+    bool isVehicleCard = false,
+    required IconData icon,
+    required Color color,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Stack(
+        children: [
+          Container(
+            width: isVehicleCard ? double.infinity : 175,
+            height: 140,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (badgeCount != null && badgeCount > 0)
+                      Positioned(
+                        top: -6,
+                        right: -90,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
               ],
             ),
           ),
