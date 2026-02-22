@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:BSA/Features/Savings/gold_db.dart';
@@ -5,6 +6,7 @@ import 'package:BSA/Features/Savings/gold_item.dart';
 import 'package:BSA/Features/Savings/screens/add_gold_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
@@ -17,6 +19,16 @@ class GoldListScreen extends StatefulWidget {
 
 class _GoldListScreenState extends State<GoldListScreen> {
   late Future<List<GoldItem>> _goldFuture;
+
+  Future<Directory> getGoldReportDirectory() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final reportDir = Directory('${dir.path}/goldReports');
+
+    if (!await reportDir.exists()) {
+      await reportDir.create(recursive: true);
+    }
+    return reportDir;
+  }
 
   void _loadGold() {
     _goldFuture = GoldDB.instance.fetchGold();
@@ -211,7 +223,24 @@ class _GoldListScreenState extends State<GoldListScreen> {
     final bytes = Uint8List.fromList(document.saveSync());
     document.dispose();
 
+    // ---- SAVE FILE ----
+    final dir = await getGoldReportDirectory();
+    final date = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+
+    final fileName =
+        userName == null
+            ? 'all_$date.pdf'
+            : '${userName.replaceAll(' ', '_')}_$date.pdf';
+
+    final file = File("${dir.path}/$fileName");
+    await file.writeAsBytes(bytes);
+
+    // ---- PREVIEW ----
     await Printing.layoutPdf(onLayout: (_) async => bytes);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Saved to Gold Reports: $fileName')));
   }
 
   // ---------------- UI ----------------

@@ -1,7 +1,9 @@
+import 'dart:io' show Directory, File;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
@@ -27,6 +29,10 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
 
   double income = 0;
   double expense = 0;
+
+  String? _selectedPayee;
+  DateTime? _fromDate;
+  DateTime? _toDate;
 
   String _title = "All Transactions";
 
@@ -57,6 +63,10 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
     DateTime? to,
   }) async {
     final data = await _txDb.getTransactions(payee: payee, from: from, to: to);
+
+    _selectedPayee = payee;
+    _fromDate = from;
+    _toDate = to;
 
     income = 0;
     expense = 0;
@@ -204,6 +214,27 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
 
   // ================= PDF =================
 
+  String _buildReportFileName({String? payee, DateTime? from, DateTime? to}) {
+    String safe(String text) =>
+        text.replaceAll(' ', '_').replaceAll(RegExp(r'[^\w_]'), '');
+
+    final dateFmt = DateFormat('dd-MMM-yyyy');
+
+    if (payee != null && from != null && to != null) {
+      return 'Payee_${safe(payee)}_${dateFmt.format(from)}_to_${dateFmt.format(to)}.pdf';
+    }
+
+    if (payee != null) {
+      return 'Payee_${safe(payee)}.pdf';
+    }
+
+    if (from != null && to != null) {
+      return 'All_Transactions_${dateFmt.format(from)}_to_${dateFmt.format(to)}.pdf';
+    }
+
+    return 'All_Transactions.pdf';
+  }
+
   Future<void> _generatePdf() async {
     final document = PdfDocument();
     final page = document.pages.add();
@@ -219,7 +250,9 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
 
     PdfTextElement(
       text:
-          "Income: ${income.toStringAsFixed(2)}\nExpense: ${expense.toStringAsFixed(2)}\nBalance: ${(income - expense).toStringAsFixed(2)}",
+          "Income: ${income.toStringAsFixed(2)}\n"
+          "Expense: ${expense.toStringAsFixed(2)}\n"
+          "Balance: ${(income - expense).toStringAsFixed(2)}",
       font: PdfStandardFont(PdfFontFamily.helvetica, 10),
     ).draw(page: page, bounds: const Rect.fromLTWH(0, 50, 500, 40));
 
@@ -250,7 +283,31 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
     final bytes = Uint8List.fromList(document.saveSync());
     document.dispose();
 
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    // 📁 Save to specific folder
+    final dir = await getApplicationDocumentsDirectory();
+    final reportDir = Directory('${dir.path}/TransactionReports');
+
+    if (!await reportDir.exists()) {
+      await reportDir.create(recursive: true);
+    }
+
+    final fileName = _buildReportFileName(
+      payee: _selectedPayee,
+      from: _fromDate,
+      to: _toDate,
+    );
+    final file = File('${reportDir.path}/$fileName');
+
+    await file.writeAsBytes(bytes);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('PDF saved to TransactionReports'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
 
