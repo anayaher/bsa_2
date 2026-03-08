@@ -19,48 +19,11 @@ class ReportMainScreen extends StatefulWidget {
 
 class _ReportMainScreenState extends State<ReportMainScreen> {
   Future<void> _onJamaKharchaTap() async {
-    final choice = await showDialog<String>(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text("Jama-Kharcha"),
-            content: const Text("What would you like to do?"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => JkReportListScreen(),
-                    ),
-                  );
-                },
-                child: const Text("View Reports"),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, 'generate'),
-                child: const Text("Generate New"),
-              ),
-            ],
-          ),
+    // 🔹 List screen (saved PDFs or reports)
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const JkReportListScreen()),
     );
-
-    if (choice == 'list') {
-      // 🔹 List screen (saved PDFs or reports)
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TransactionReportScreen()),
-      );
-    }
-
-    if (choice == 'generate') {
-      // 🔹 Directly open filter → generate flow
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TransactionReportScreen()),
-      );
-      // If later you split generate screen, hook it here
-    }
   }
 
   Future<void> _selectUserAndGenerate() async {

@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/puc_db.dart';
+import 'package:BSA/Features/Vehicles/screens/add_puc_screen.dart';
 import 'package:BSA/Models/insurance_model.dart';
+import 'package:BSA/Models/puc_model.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/helper.dart';
 import 'package:flutter/material.dart';
@@ -8,51 +11,51 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
-import 'add_insurance_screen.dart';
 
-class InsuranceListScreen extends ConsumerStatefulWidget {
+
+class PucListScreen extends ConsumerStatefulWidget {
   final int vehicleId;
-  const InsuranceListScreen({super.key, required this.vehicleId});
+  const PucListScreen({super.key, required this.vehicleId});
 
   @override
-  ConsumerState<InsuranceListScreen> createState() =>
-      _InsuranceListScreenState();
+  ConsumerState<PucListScreen> createState() =>
+      _PucListScreenState();
 }
 
-class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
+class _PucListScreenState extends ConsumerState<PucListScreen> {
   bool isLoading = true;
-  List<InsuranceModel> insurances = [];
+  List<PucModel> insurances = [];
 
   @override
   void initState() {
     super.initState();
-    loadInsurances();
+    loadPuc();
   }
 
-  Future<void> loadInsurances() async {
+  Future<void> loadPuc() async {
     setState(() => isLoading = true);
-    insurances = await InsuranceDB.instance.fetchInsurances(widget.vehicleId);
+    insurances = await PucDb.instance.fetchPucForVehicle(widget.vehicleId);
     setState(() => isLoading = false);
   }
 
   Future<void> deleteInsurance(int id) async {
-    await InsuranceDB.instance.deleteInsurance(id);
-    await loadInsurances();
+    await PucDb.instance.deletePuc(id);
+    await loadPuc();
   }
 
-  void editInsurance(InsuranceModel insurance) {
+  void editInsurance(PucModel insurance) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddInsuranceScreen(
+        builder: (_) => AddPucScreen(
           vehicleId: widget.vehicleId,
           insurance: insurance,
         ),
       ),
-    ).then((_) => loadInsurances());
+    ).then((_) => loadPuc());
   }
 
-  void showInsuranceMenu(InsuranceModel insurance) {
+  void showInsuranceMenu(PucModel insurance) {
     showModalBottomSheet(
       context: context,
       builder: (_) {
@@ -100,7 +103,7 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
     );
   }
 
-  Widget buildInsuranceCard(InsuranceModel ins, {bool? isExpired}) {
+  Widget buildInsuranceCard(PucModel ins, {bool? isExpired}) {
     return GestureDetector(
       onLongPress: () => showInsuranceMenu(ins),
       child: Container(
@@ -212,9 +215,9 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => AddInsuranceScreen(vehicleId: widget.vehicleId),
+              builder: (_) => AddPucScreen(vehicleId: widget.vehicleId),
             ),
-          ).then((_) => loadInsurances());
+          ).then((_) => loadPuc());
         },
         child: const Icon(Icons.add),
       ),

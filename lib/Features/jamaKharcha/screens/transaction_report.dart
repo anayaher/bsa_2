@@ -2,6 +2,7 @@ import 'dart:io' show Directory, File;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
@@ -220,6 +221,9 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
 
     final dateFmt = DateFormat('dd-MMM-yyyy');
 
+    final date = DateTime.now();
+    final formattedDate = dateFmt.format(date);
+
     if (payee != null && from != null && to != null) {
       return 'Payee_${safe(payee)}_${dateFmt.format(from)}_to_${dateFmt.format(to)}.pdf';
     }
@@ -232,41 +236,61 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
       return 'All_Transactions_${dateFmt.format(from)}_to_${dateFmt.format(to)}.pdf';
     }
 
-    return 'All_Transactions.pdf';
+    return 'All_$formattedDate.pdf';
   }
 
   Future<void> _generatePdf() async {
+    // 🔤 Load Unicode font (Roboto)
+    final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+
+    final bodyFont = PdfTrueTypeFont(fontData.buffer.asUint8List(), 10);
+
+    final titleFont = PdfTrueTypeFont(
+      fontData.buffer.asUint8List(),
+      14,
+      style: PdfFontStyle.bold,
+    );
+
     final document = PdfDocument();
     final page = document.pages.add();
 
+    // ================= TITLE =================
     PdfTextElement(
       text: "Transaction Report\n$_title",
-      font: PdfStandardFont(
-        PdfFontFamily.helvetica,
-        16,
-        style: PdfFontStyle.bold,
-      ),
-    ).draw(page: page, bounds: const Rect.fromLTWH(0, 0, 500, 40));
+      font: titleFont,
+    ).draw(page: page, bounds: const Rect.fromLTWH(0, 0, 500, 45));
 
+    // ================= SUMMARY =================
     PdfTextElement(
       text:
-          "Income: ${income.toStringAsFixed(2)}\n"
-          "Expense: ${expense.toStringAsFixed(2)}\n"
-          "Balance: ${(income - expense).toStringAsFixed(2)}",
-      font: PdfStandardFont(PdfFontFamily.helvetica, 10),
-    ).draw(page: page, bounds: const Rect.fromLTWH(0, 50, 500, 40));
+          "Income: ₹${income.toStringAsFixed(2)}\n"
+          "Expense: ₹${expense.toStringAsFixed(2)}\n"
+          "Balance: ₹${(income - expense).toStringAsFixed(2)}",
+      font: bodyFont,
+    ).draw(page: page, bounds: const Rect.fromLTWH(0, 55, 500, 45));
 
+    // ================= TABLE =================
     final grid = PdfGrid();
     grid.columns.add(count: 5);
     grid.headers.add(1);
 
+    // Grid font (CRITICAL)
+    grid.style = PdfGridStyle(
+      font: bodyFont,
+      cellPadding: PdfPaddings(left: 4, right: 4, top: 4, bottom: 4),
+    );
+
+    // Header row
     final header = grid.headers[0];
+    header.style = PdfGridRowStyle(font: titleFont);
+
     header.cells[0].value = 'Date';
     header.cells[1].value = 'Payee';
     header.cells[2].value = 'Head';
     header.cells[3].value = 'Income';
     header.cells[4].value = 'Expense';
 
+    // Data rows
     for (final tx in _transactions) {
       final row = grid.rows.add();
       final isIncome = tx.type == 'Income';
@@ -274,16 +298,16 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
       row.cells[0].value = DateFormat.yMMMd().format(tx.date);
       row.cells[1].value = tx.payee;
       row.cells[2].value = tx.head;
-      row.cells[3].value = isIncome ? tx.amount.toStringAsFixed(2) : '-';
-      row.cells[4].value = !isIncome ? tx.amount.toStringAsFixed(2) : '-';
+      row.cells[3].value = isIncome ? "₹${tx.amount.toStringAsFixed(2)}" : '-';
+      row.cells[4].value = !isIncome ? "₹${tx.amount.toStringAsFixed(2)}" : '-';
     }
 
-    grid.draw(page: page, bounds: const Rect.fromLTWH(0, 100, 500, 600));
+    grid.draw(page: page, bounds: const Rect.fromLTWH(0, 110, 500, 600));
 
+    // ================= SAVE =================
     final bytes = Uint8List.fromList(document.saveSync());
     document.dispose();
 
-    // 📁 Save to specific folder
     final dir = await getApplicationDocumentsDirectory();
     final reportDir = Directory('${dir.path}/TransactionReports');
 
@@ -296,14 +320,14 @@ class _TransactionReportScreenState extends State<TransactionReportScreen> {
       from: _fromDate,
       to: _toDate,
     );
-    final file = File('${reportDir.path}/$fileName');
 
+    final file = File('${reportDir.path}/$fileName');
     await file.writeAsBytes(bytes);
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('PDF saved to TransactionReports'),
         behavior: SnackBarBehavior.floating,
       ),

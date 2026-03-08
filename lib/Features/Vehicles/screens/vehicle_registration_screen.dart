@@ -1,7 +1,9 @@
 import 'dart:io';
-import 'package:BSA/Features/Insurance/data/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/puc_db.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/Models/insurance_model.dart';
+import 'package:BSA/Models/puc_model.dart';
 import 'package:BSA/Models/vehicle_model.dart';
 import 'package:BSA/core/Common/photo_viewer.dart';
 
@@ -127,14 +129,17 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   // ------------------ UI HELPERS ------------------
   Widget buildImagePicker(String title, File? file, Function() onPick) {
     return InkWell(
-      onTap: file == null
-          ? onPick
-          : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => FullImageViewer(image: file)),
-              );
-            },
+      onTap:
+          file == null
+              ? onPick
+              : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FullImageViewer(image: file),
+                  ),
+                );
+              },
       onLongPress: () {
         // allow replacing image
         onPick();
@@ -151,19 +156,19 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
           children: [
             file == null
                 ? Center(
-                    child: Text(
-                      title,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.file(
-                      file,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                    ),
+                  child: Text(
+                    title,
+                    style: const TextStyle(color: Colors.grey),
                   ),
+                )
+                : ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.file(
+                    file,
+                    fit: BoxFit.contain,
+                    width: double.infinity,
+                  ),
+                ),
 
             // Edit icon overlay
             if (file != null)
@@ -215,9 +220,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
         child: TextField(
           readOnly: true,
           decoration: InputDecoration(
-            hintText: selected == null
-                ? label
-                : selected.toString().split(" ").first,
+            hintText:
+                selected == null ? label : selected.toString().split(" ").first,
             suffixIcon: const Icon(Icons.calendar_month),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -255,6 +259,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     super.initState();
     if (widget.vehicle != null) {
       _loadInsuraceDetails();
+      _loadPucDetails();
       final v = widget.vehicle!;
 
       vehicleNameCtrl.text = v.vehicleName;
@@ -267,14 +272,12 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       vehiclePurchaseDate = DateTime.parse(v.purchaseDate);
       //  insuranceBuyDate = DateTime.parse(v.insuranceBuyDate);
       // insuranceValidUpto = DateTime.parse(v.insuranceValidUpto);
-      pucDate = DateTime.parse(v.pucDate);
-      pucValidUpto = DateTime.parse(v.pucValidUpto);
-
+    
       vehiclePhoto = File(v.vehiclePhoto);
       rcFront = File(v.rcFront);
       rcBack = File(v.rcBack);
       // insurancePhoto = File(v.insurancePhoto);
-      pucPhoto = File(v.pucPhoto);
+      pucPhoto = File(v.pucPhoto ?? "");
     }
   }
 
@@ -448,15 +451,15 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                     vehiclePhoto: vehiclePhoto!.path,
                     rcFront: rcFront!.path,
                     rcBack: rcBack!.path,
-                    pucDate: pucDate!.toIso8601String(),
-                    pucValidUpto: pucValidUpto!.toIso8601String(),
-                    pucPhoto: pucPhoto!.path,
-                    chassis: chassisCtrl.text.trim().isEmpty
-                        ? null
-                        : chassisCtrl.text.trim(),
-                    engine: engineCtrl.text.trim().isEmpty
-                        ? null
-                        : engineCtrl.text.trim(),
+
+                    chassis:
+                        chassisCtrl.text.trim().isEmpty
+                            ? null
+                            : chassisCtrl.text.trim(),
+                    engine:
+                        engineCtrl.text.trim().isEmpty
+                            ? null
+                            : engineCtrl.text.trim(),
                   );
 
                   int vId;
@@ -471,6 +474,15 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                       validUpto: insuranceValidUpto!.toIso8601String(),
                       photoPath: insurancePhoto!.path,
                     );
+
+                    PucModel pucModel = PucModel(
+                      vehicleId: vId,
+                      buyDate: pucDate!.toIso8601String(),
+                      validUpto: pucValidUpto!.toIso8601String(),
+                      photoPath: pucPhoto!.path,
+                    );
+
+                    await PucDb.instance.insertPuc(pucModel);
 
                     await InsuranceDB.instance.insertInsurance(insurance);
 
@@ -529,6 +541,26 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
         insuranceBuyDate = DateTime.parse(latest.buyDate);
         insuranceValidUpto = DateTime.parse(latest.validUpto);
         insurancePhoto = File(latest.photoPath);
+      });
+    }
+  }
+
+  void _loadPucDetails() async {
+    if (widget.vehicle == null) return;
+
+    // Fetch all insurances for this vehicle
+    List<PucModel> insurances = await PucDb.instance.fetchPucForVehicle(
+      widget.vehicle!.id!,
+    );
+
+    if (insurances.isNotEmpty) {
+      // Assuming the first record is the latest because fetchInsurances orders by buyDate DESC
+      final latest = insurances.last;
+
+      setState(() {
+        pucDate = DateTime.parse(latest.buyDate);
+        pucValidUpto = DateTime.parse(latest.validUpto);
+        pucPhoto = File(latest.photoPath);
       });
     }
   }

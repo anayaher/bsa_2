@@ -34,9 +34,6 @@ class VehicleDB {
         vehiclePhoto TEXT NOT NULL,
         rcFront TEXT NOT NULL,
         rcBack TEXT NOT NULL,
-        pucDate TEXT NOT NULL,
-        pucValidUpto TEXT NOT NULL,
-        pucPhoto TEXT NOT NULL,
         chassis TEXT,
         engine TEXT
       )

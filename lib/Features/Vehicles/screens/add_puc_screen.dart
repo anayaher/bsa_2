@@ -1,24 +1,26 @@
 import 'dart:io';
 import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/puc_db.dart';
 import 'package:BSA/Models/insurance_model.dart';
+import 'package:BSA/Models/puc_model.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-class AddInsuranceScreen extends StatefulWidget {
+class AddPucScreen extends StatefulWidget {
   final int vehicleId;
-  final InsuranceModel? insurance;
+  final PucModel? insurance;
 
-  const AddInsuranceScreen({
+  const AddPucScreen({
     super.key,
     required this.vehicleId,
     this.insurance,
   });
 
   @override
-  State<AddInsuranceScreen> createState() => _AddInsuranceScreenState();
+  State<AddPucScreen> createState() => _AddPucScreenState();
 }
 
-class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
+class _AddPucScreenState extends State<AddPucScreen> {
   DateTime? boughtDate;
   DateTime? validUpto;
   File? insurancePhoto;
@@ -75,7 +77,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
     if (insurancePhoto == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Upload insurance photo"),
+          content: Text("Upload PUC photo"),
           backgroundColor: Colors.red,
         ),
       );
@@ -90,7 +92,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.insurance == null ? "Add Insurance" : "Update Insurance",
+          widget.insurance == null ? "Add PUC" : "Update PUC",
         ),
       ),
       body: SingleChildScrollView(
@@ -159,7 +161,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Insurance Photo",
+                "PUC Photo",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -198,7 +200,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                   if (!validate()) return;
 
                   // Save insurance here
-                  final newInsurance = InsuranceModel(
+                  final newInsurance = PucModel(
                     id: widget.insurance?.id,
                     vehicleId: widget.vehicleId,
                     buyDate: boughtDate!.toIso8601String(),
@@ -208,9 +210,9 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
 
                   // TODO: Insert/update to DB
                   if (widget.insurance == null) {
-                    await InsuranceDB.instance.insertInsurance(newInsurance);
+                    await PucDb.instance.insertPuc(newInsurance);
                   } else {
-                    await InsuranceDB.instance.updateInsurance(newInsurance);
+                    await PucDb.instance.updatePuc(newInsurance);
                   }
 
                   Navigator.pop(context, newInsurance);
@@ -223,8 +225,8 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                 ),
                 child: Text(
                   widget.insurance == null
-                      ? "Add Insurance"
-                      : "Update Insurance",
+                      ? "Add PUC"
+                      : "Update PUC",
                 ),
               ),
             ),

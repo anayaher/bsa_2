@@ -1,5 +1,5 @@
 import 'package:BSA/Features/Auth/Screens/login_screen.dart';
-import 'package:BSA/Features/Insurance/data/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
 import 'package:BSA/Features/Salary/Screens/deductions_screen.dart';
 import 'package:BSA/Features/Salary/Screens/sal_slip_history.dart';
 import 'package:BSA/Features/Salary/Screens/sal_slip_screen.dart';
