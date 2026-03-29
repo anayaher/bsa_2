@@ -6,6 +6,7 @@ import 'package:BSA/Features/Maintainance/screens/maintainance_list_screen.dart'
 import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
 import 'package:BSA/Features/Vehicles/screens/puc_list_screen.dart';
+import 'package:BSA/Features/Vehicles/widgets/vehicle_card.dart';
 import 'package:BSA/Models/vehicle_model.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:flutter/material.dart';
@@ -130,239 +131,46 @@ class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
 
                                       final isExipred = vehicle.hasAnyExpired;
 
-                                      return GestureDetector(
-                                        onTap:
-                                            () => editVehicle(vehicle.vehicle),
-                                        onLongPress:
-                                            () => showVehicleMenu(
-                                              vehicle.vehicle,
-                                            ),
-                                        child: Stack(
-                                          children: [
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                                gradient: LinearGradient(
-                                                  colors:
-                                                      !isExipred
-                                                          ? [
-                                                            Colors.white
-                                                                .withOpacity(
-                                                                  0.20,
-                                                                ),
-                                                            Colors.white
-                                                                .withOpacity(
-                                                                  0.05,
-                                                                ),
-                                                          ]
-                                                          : [
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              220,
-                                                              15,
-                                                              0,
-                                                            ).withOpacity(0.50),
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              127,
-                                                              7,
-                                                              7,
-                                                            ).withOpacity(0.5),
-                                                          ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                                border: Border.all(
-                                                  color: Colors.white
-                                                      .withOpacity(0.25),
-                                                  width: 1.2,
-                                                ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.07),
-                                                    blurRadius: 12,
-                                                    offset: const Offset(0, 6),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                                child: BackdropFilter(
-                                                  filter: ImageFilter.blur(
-                                                    sigmaX: 12,
-                                                    sigmaY: 12,
-                                                  ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          14,
-                                                        ),
-                                                    child: Row(
-                                                      children: [
-                                                        // Vehicle Image
-                                                        ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                14,
-                                                              ),
-                                                          child: Image.asset(
-                                                            "assets/images/bsa.png",
-                                                            height: 65,
-                                                            width: 65,
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        ),
+                                     return VehicleCard(
+  vehicleWrapper: vehicle,
+  onTap: () => editVehicle(vehicle.vehicle),
+  onLongPress: () => showVehicleMenu(vehicle.vehicle),
+  onMenuSelect: (value) {
+    if (value == 'maintenance') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MaintenanceListScreen(
+            vehicle.vehicle.vehicleName,
+            vehicleId: vehicle.vehicle.id!,
+          ),
+        ),
+      );
+    }
 
-                                                        const SizedBox(
-                                                          width: 16,
-                                                        ),
+    if (value == 'insurance') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InsuranceListScreen(
+            vehicleId: vehicle.vehicle.id!,
+          ),
+        ),
+      );
+    }
 
-                                                        // Vehicle info
-                                                        Expanded(
-                                                          child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Text(
-                                                                vehicle
-                                                                    .vehicle
-                                                                    .vehicleName,
-                                                                style: const TextStyle(
-                                                                  fontSize: 19,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700,
-                                                                  color:
-                                                                      Colors
-                                                                          .white,
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                height: 5,
-                                                              ),
-                                                              Text(
-                                                                vehicle
-                                                                    .vehicle
-                                                                    .regNumber,
-                                                                style: TextStyle(
-                                                                  fontSize: 17,
-                                                                  color: Colors
-                                                                      .white
-                                                                      .withOpacity(
-                                                                        0.8,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-
-                                                        // Maintenance button
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-
-                                            // Menu button on top-right
-                                            Positioned(
-                                              top: 4,
-                                              right: 4,
-                                              child: PopupMenuButton<String>(
-                                                color: Colors.grey[900],
-                                                icon: const Icon(
-                                                  Icons.more_vert,
-                                                  color: Colors.white,
-                                                ),
-                                                onSelected: (value) {
-                                                  if (value == 'maintenance') {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (
-                                                              _,
-                                                            ) => MaintenanceListScreen(
-                                                              vehicle
-                                                                  .vehicle
-                                                                  .vehicleName,
-                                                              vehicleId:
-                                                                  vehicle
-                                                                      .vehicle
-                                                                      .id!,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  }
-                                                  if (value == 'insurance') {
-                                                    Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (context) {
-                                                          return InsuranceListScreen(
-                                                            vehicleId:
-                                                                vehicle
-                                                                    .vehicle
-                                                                    .id!,
-                                                          );
-                                                        },
-                                                      ),
-                                                    );
-                                                  }
-                                                  if (value == 'puc') {
-                                                    Navigator.of(context).push(
-                                                      MaterialPageRoute(
-                                                        builder: (context) {
-                                                          return PucListScreen(
-                                                            vehicleId:
-                                                                vehicle
-                                                                    .vehicle
-                                                                    .id!,
-                                                          );
-                                                        },
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                                itemBuilder:
-                                                    (BuildContext context) => [
-                                                      const PopupMenuItem(
-                                                        value: 'maintenance',
-                                                        child: Text(
-                                                          'View Maintenance',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'insurance',
-                                                        child: Text(
-                                                          'View Insurance',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const PopupMenuItem(
-                                                        value: 'puc',
-                                                        child: Text(
-                                                          'View PUC',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
+    if (value == 'puc') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PucListScreen(
+            vehicleId: vehicle.vehicle.id!,
+          ),
+        ),
+      );
+    }
+  },
+);
                                     },
                                   );
                                 }),

@@ -316,7 +316,8 @@ class _SalarySlipScreenState extends State<SalarySlipScreen> {
     }
 
     if (_salary == null) {
-      return const Scaffold(
+      return Scaffold(
+        appBar: AppBar(title: Text("Salary Slip"), centerTitle: true),
         body: Center(child: Text("Please setup salary first")),
       );
     }
