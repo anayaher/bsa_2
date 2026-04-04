@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:BSA/Models/vehicle_model.dart';
 
 class VehicleCard extends StatelessWidget {
-  final dynamic vehicleWrapper; // your controller object (with flags)
+  final dynamic vehicleWrapper; // contains vehicle + status flags
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final Function(String) onMenuSelect;
@@ -74,20 +74,34 @@ class VehicleCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                if (vehicleWrapper.isInsuranceExpired)
-                                  _badge("Insurance Expired"),
-                                if (vehicleWrapper.isInsuranceExpired &&
-                                    vehicleWrapper.isPucExpired)
-                                  const SizedBox(width: 8),
-                                if (vehicleWrapper.isPucExpired)
-                                  _badge("PUC Expired"),
-                              ],
-                            ),
+                            /// 🔴 BADGES (only if expired)
+                            if (vehicleWrapper.hasAnyExpired)
+                              Row(
+                                children: [
+                                  if (vehicleWrapper.isInsuranceExpired)
+                                    _badge(
+                                      text: "Insurance Expired",
+                                      color: Colors.red,
+                                      icon: Icons.warning_rounded,
+                                    ),
 
-                            const SizedBox(height: 8),
+                                  if (vehicleWrapper.isInsuranceExpired &&
+                                      vehicleWrapper.isPucExpired)
+                                    const SizedBox(width: 6),
 
+                                  if (vehicleWrapper.isPucExpired)
+                                    _badge(
+                                      text: "PUC Expired",
+                                      color: Colors.red,
+                                      icon: Icons.warning_rounded,
+                                    ),
+                                ],
+                              ),
+
+                            if (vehicleWrapper.hasAnyExpired)
+                              const SizedBox(height: 6),
+
+                            /// VEHICLE NAME
                             Text(
                               vehicle.vehicleName,
                               style: const TextStyle(
@@ -99,6 +113,7 @@ class VehicleCard extends StatelessWidget {
 
                             const SizedBox(height: 5),
 
+                            /// REG NUMBER
                             Text(
                               vehicle.regNumber,
                               style: TextStyle(
@@ -124,23 +139,30 @@ class VehicleCard extends StatelessWidget {
               color: Colors.grey[900],
               icon: const Icon(Icons.more_vert, color: Colors.white),
               onSelected: onMenuSelect,
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'maintenance',
-                  child: Text("View Maintenance",
-                      style: TextStyle(color: Colors.white)),
-                ),
-                PopupMenuItem(
-                  value: 'insurance',
-                  child: Text("View Insurance",
-                      style: TextStyle(color: Colors.white)),
-                ),
-                PopupMenuItem(
-                  value: 'puc',
-                  child: Text("View PUC",
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ],
+              itemBuilder:
+                  (context) => const [
+                    PopupMenuItem(
+                      value: 'maintenance',
+                      child: Text(
+                        "View Maintenance",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'insurance',
+                      child: Text(
+                        "View Insurance",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'puc',
+                      child: Text(
+                        "View PUC",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
             ),
           ),
         ],
@@ -148,14 +170,36 @@ class VehicleCard extends StatelessWidget {
     );
   }
 
-  Widget _badge(String text) {
+  /// 🔥 PREMIUM BADGE
+  Widget _badge({
+    required String text,
+    required Color color,
+    required IconData icon,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.red.shade100,
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.25), color.withOpacity(0.10)],
+        ),
+        border: Border.all(color: color.withOpacity(0.6)),
       ),
-      child: Text(text),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

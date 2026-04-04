@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'dart:ui';
 import 'package:BSA/Features/Insurance/screens/insurance_list_screen.dart';
-import 'package:BSA/Features/Maintainance/screens/add_maintainance_screen.dart';
+
 import 'package:BSA/Features/Maintainance/screens/maintainance_list_screen.dart';
 import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
@@ -25,13 +24,17 @@ class VehiclesListScreen extends ConsumerStatefulWidget {
 class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
   bool isLoading = true;
 
+  final vehicleController = Get.put(VehicleController());
+
   @override
   void initState() {
     super.initState();
+    loadVehicles();
   }
 
   Future<void> deleteVehicle(int id) async {
-    await VehicleDB.instance.deleteVehicle(id);
+    await vehicleController.deleteVehicle(id);
+    await vehicleController.loadVehicles();
   }
 
   void editVehicle(VehicleModel vehicle) {
@@ -127,50 +130,63 @@ class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
                                       final vehicle =
                                           vehicleController.vehicles[index];
 
-                                      final vehicleModel = vehicle.vehicle;
+                                  
 
-                                      final isExipred = vehicle.hasAnyExpired;
+                                      return VehicleCard(
+                                        vehicleWrapper: vehicle,
+                                        onTap:
+                                            () => editVehicle(vehicle.vehicle),
+                                        onLongPress:
+                                            () => showVehicleMenu(
+                                              vehicle.vehicle,
+                                            ),
+                                        onMenuSelect: (value) {
+                                          if (value == 'maintenance') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) =>
+                                                        MaintenanceListScreen(
+                                                          vehicle
+                                                              .vehicle
+                                                              .vehicleName,
+                                                          vehicleId:
+                                                              vehicle
+                                                                  .vehicle
+                                                                  .id!,
+                                                        ),
+                                              ),
+                                            );
+                                          }
 
-                                     return VehicleCard(
-  vehicleWrapper: vehicle,
-  onTap: () => editVehicle(vehicle.vehicle),
-  onLongPress: () => showVehicleMenu(vehicle.vehicle),
-  onMenuSelect: (value) {
-    if (value == 'maintenance') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MaintenanceListScreen(
-            vehicle.vehicle.vehicleName,
-            vehicleId: vehicle.vehicle.id!,
-          ),
-        ),
-      );
-    }
+                                          if (value == 'insurance') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => InsuranceListScreen(
+                                                      vehicleId:
+                                                          vehicle.vehicle.id!,
+                                                    ),
+                                              ),
+                                            );
+                                          }
 
-    if (value == 'insurance') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => InsuranceListScreen(
-            vehicleId: vehicle.vehicle.id!,
-          ),
-        ),
-      );
-    }
-
-    if (value == 'puc') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PucListScreen(
-            vehicleId: vehicle.vehicle.id!,
-          ),
-        ),
-      );
-    }
-  },
-);
+                                          if (value == 'puc') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => PucListScreen(
+                                                      vehicleId:
+                                                          vehicle.vehicle.id!,
+                                                    ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      );
                                     },
                                   );
                                 }),
@@ -202,5 +218,14 @@ class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
                 ),
               ),
     );
+  }
+
+  void loadVehicles() {
+    final vehicleController = Get.find<VehicleController>();
+    vehicleController.loadVehicles().then((_) {
+      setState(() {
+        isLoading = false;
+      });
+    });
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
 import 'package:BSA/Features/Vehicles/db/puc_db.dart';
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
@@ -9,6 +10,7 @@ import 'package:BSA/core/Common/photo_viewer.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 class VehicleRegistrationScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class VehicleRegistrationScreen extends StatefulWidget {
 }
 
 class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
+  final controller = Get.put(VehicleController());
   bool validateForm() {
     if (vehiclePhoto == null) {
       showError("Please upload vehicle photo");
@@ -272,7 +275,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       vehiclePurchaseDate = DateTime.parse(v.purchaseDate);
       //  insuranceBuyDate = DateTime.parse(v.insuranceBuyDate);
       // insuranceValidUpto = DateTime.parse(v.insuranceValidUpto);
-    
+
       vehiclePhoto = File(v.vehiclePhoto);
       rcFront = File(v.rcFront);
       rcBack = File(v.rcBack);
@@ -496,6 +499,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                         backgroundColor: Colors.green,
                       ),
                     );
+
+                    controller.loadVehicles();
                   } else {
                     // UPDATE
                     await VehicleDB.instance.updateVehicle(model);
@@ -505,6 +510,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                         backgroundColor: Colors.blue,
                       ),
                     );
+
+                    controller.loadVehicles();
                   }
 
                   Navigator.pop(context);

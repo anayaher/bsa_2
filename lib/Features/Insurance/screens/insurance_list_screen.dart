@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
 import 'package:BSA/Models/insurance_model.dart';
 import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
@@ -23,6 +25,8 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
   bool isLoading = true;
   List<InsuranceModel> insurances = [];
 
+  final controller = Get.find<VehicleController>();
+
   @override
   void initState() {
     super.initState();
@@ -31,12 +35,12 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
 
   Future<void> loadInsurances() async {
     setState(() => isLoading = true);
-    insurances = await InsuranceDB.instance.fetchInsurances(widget.vehicleId);
+    insurances = controller.getInsuranceByVehicle(widget.vehicleId);
     setState(() => isLoading = false);
   }
 
   Future<void> deleteInsurance(int id) async {
-    await InsuranceDB.instance.deleteInsurance(id);
+    await controller.deleteInsurance(id);
     await loadInsurances();
   }
 
@@ -44,10 +48,11 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AddInsuranceScreen(
-          vehicleId: widget.vehicleId,
-          insurance: insurance,
-        ),
+        builder:
+            (_) => AddInsuranceScreen(
+              vehicleId: widget.vehicleId,
+              insurance: insurance,
+            ),
       ),
     ).then((_) => loadInsurances());
   }
@@ -88,14 +93,15 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(backgroundColor: Colors.black),
-          body: PhotoView(
-            imageProvider: FileImage(File(path)),
-            backgroundDecoration: const BoxDecoration(color: Colors.black),
-          ),
-        ),
+        builder:
+            (_) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(backgroundColor: Colors.black),
+              body: PhotoView(
+                imageProvider: FileImage(File(path)),
+                backgroundDecoration: const BoxDecoration(color: Colors.black),
+              ),
+            ),
       ),
     );
   }
@@ -107,9 +113,10 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isExpired!
-              ? Colors.red.withValues(alpha: 0.1)
-              : Colors.white.withOpacity(0.1),
+          color:
+              isExpired!
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.2)),
           boxShadow: [
@@ -128,23 +135,24 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
               onTap: () => viewImage(ins.photoPath),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: ins.photoPath.isNotEmpty
-                    ? Image.file(
-                        File(ins.photoPath),
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        width: double.infinity,
-                        height: 180,
-                        color: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.image,
-                          color: Colors.white,
-                          size: 50,
+                child:
+                    ins.photoPath.isNotEmpty
+                        ? Image.file(
+                          File(ins.photoPath),
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        )
+                        : Container(
+                          width: double.infinity,
+                          height: 180,
+                          color: Colors.grey.shade300,
+                          child: const Icon(
+                            Icons.image,
+                            color: Colors.white,
+                            size: 50,
+                          ),
                         ),
-                      ),
               ),
             ),
             const SizedBox(height: 12),
@@ -173,40 +181,41 @@ class _InsuranceListScreenState extends ConsumerState<InsuranceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expiry = ref.watch(expiryProvider);
     return Scaffold(
       appBar: AppBar(title: const Text("Insurance History")),
-      body: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xff1f1c2c), Color(0xff928dab)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: Obx(() {
+        final insurances = controller.getInsuranceByVehicle(widget.vehicleId);
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xff1f1c2c), Color(0xff928dab)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : insurances.isEmpty
-            ? const Center(
-                child: Text(
-                  "No insurance records",
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              )
-            : ListView.builder(
-                itemCount: insurances.length,
-                itemBuilder: (context, index) {
-                  bool isExpired = expiry.any(
-                    (r) => r.vehicleId == insurances[index].vehicleId,
-                  );
-                  return buildInsuranceCard(
-                    insurances[index],
-                    isExpired: isExpired,
-                  );
-                },
-              ),
-      ),
+          child:
+              insurances.isEmpty
+                  ? const Center(
+                    child: Text(
+                      "No insurance records",
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
+                  )
+                  : ListView.builder(
+                    itemCount: insurances.length,
+                    itemBuilder: (context, index) {
+                      bool isExpired = controller.isInsuranceExpired(
+                        insurances[index],
+                      );
+                      return buildInsuranceCard(
+                        insurances[index],
+                        isExpired: isExpired,
+                      );
+                    },
+                  ),
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

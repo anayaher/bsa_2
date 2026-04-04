@@ -10,19 +10,17 @@ class VehicleStatus {
   VehicleStatus({required this.vehicle, this.insurance, this.puc});
 
   bool get isInsuranceExpired {
+    if (insurance == null) return false;
     DateTime validUptoFinal = DateTime.parse(insurance!.validUpto);
 
     return insurance == null || validUptoFinal.isBefore(DateTime.now());
   }
 
-
-
-
   bool get isPucExpired {
+    if (puc == null) return false;
     DateTime validUptoFinal = DateTime.parse(puc!.validUpto);
-  return   puc == null || validUptoFinal.isBefore(DateTime.now());
+    return puc == null || validUptoFinal.isBefore(DateTime.now());
   }
-    
 
   bool get hasAnyExpired => isInsuranceExpired || isPucExpired;
 }

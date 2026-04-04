@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
 import 'package:BSA/Models/insurance_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddInsuranceScreen extends StatefulWidget {
@@ -24,6 +27,8 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
   File? insurancePhoto;
 
   final ImagePicker picker = ImagePicker();
+
+  final controller = Get.put(VehicleController());
 
   @override
   void initState() {
@@ -197,23 +202,21 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                 onPressed: () async {
                   if (!validate()) return;
 
-                  // Save insurance here
-                  final newInsurance = InsuranceModel(
-                    id: widget.insurance?.id,
+                  InsuranceModel ins = InsuranceModel(
                     vehicleId: widget.vehicleId,
                     buyDate: boughtDate!.toIso8601String(),
                     validUpto: validUpto!.toIso8601String(),
                     photoPath: insurancePhoto!.path,
                   );
 
-                  // TODO: Insert/update to DB
                   if (widget.insurance == null) {
-                    await InsuranceDB.instance.insertInsurance(newInsurance);
+                    await controller.addInsurance(ins);
                   } else {
-                    await InsuranceDB.instance.updateInsurance(newInsurance);
+                    await controller.updateInsurance(ins);
                   }
 
-                  Navigator.pop(context, newInsurance);
+                  await controller.loadVehicles();
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

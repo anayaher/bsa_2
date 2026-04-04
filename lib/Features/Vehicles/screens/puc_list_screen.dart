@@ -1,172 +1,108 @@
 import 'dart:io';
-import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
-import 'package:BSA/Features/Vehicles/db/puc_db.dart';
+import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/screens/add_puc_screen.dart';
-import 'package:BSA/Models/insurance_model.dart';
 import 'package:BSA/Models/puc_model.dart';
-import 'package:BSA/core/Controller/expiry_controller.dart';
 import 'package:BSA/core/helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
 
-
-
-class PucListScreen extends ConsumerStatefulWidget {
+class PucListScreen extends StatelessWidget {
   final int vehicleId;
-  const PucListScreen({super.key, required this.vehicleId});
+  PucListScreen({super.key, required this.vehicleId});
 
-  @override
-  ConsumerState<PucListScreen> createState() =>
-      _PucListScreenState();
-}
+  final controller = Get.find<VehicleController>();
 
-class _PucListScreenState extends ConsumerState<PucListScreen> {
-  bool isLoading = true;
-  List<PucModel> insurances = [];
-
-  @override
-  void initState() {
-    super.initState();
-    loadPuc();
-  }
-
-  Future<void> loadPuc() async {
-    setState(() => isLoading = true);
-    insurances = await PucDb.instance.fetchPucForVehicle(widget.vehicleId);
-    setState(() => isLoading = false);
-  }
-
-  Future<void> deleteInsurance(int id) async {
-    await PucDb.instance.deletePuc(id);
-    await loadPuc();
-  }
-
-  void editInsurance(PucModel insurance) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddPucScreen(
-          vehicleId: widget.vehicleId,
-          insurance: insurance,
-        ),
-      ),
-    ).then((_) => loadPuc());
-  }
-
-  void showInsuranceMenu(PucModel insurance) {
+  void showMenu(BuildContext context, PucModel puc) {
     showModalBottomSheet(
       context: context,
-      builder: (_) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit, color: Colors.blue),
-                title: const Text("Edit Insurance"),
-                onTap: () {
-                  Navigator.pop(context);
-                  editInsurance(insurance);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text("Delete Insurance"),
-                onTap: () {
-                  Navigator.pop(context);
-                  deleteInsurance(insurance.id!);
-                },
-              ),
-            ],
+      builder:
+          (_) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Colors.blue),
+                  title: const Text("Edit PUC"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Get.to(
+                      () => AddPucScreen(vehicleId: vehicleId, insurance: puc),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text("Delete PUC"),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await controller.deletePuc(puc.id!);
+                  },
+                ),
+              ],
+            ),
           ),
-        );
-      },
     );
   }
 
-  void viewImage(String path) {
+  void viewImage(BuildContext context, String path) {
     if (path.isEmpty) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(backgroundColor: Colors.black),
-          body: PhotoView(
-            imageProvider: FileImage(File(path)),
-            backgroundDecoration: const BoxDecoration(color: Colors.black),
-          ),
-        ),
+
+    Get.to(
+      () => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black),
+        body: PhotoView(imageProvider: FileImage(File(path))),
       ),
     );
   }
 
-  Widget buildInsuranceCard(PucModel ins, {bool? isExpired}) {
+  Widget buildCard(PucModel puc, BuildContext context) {
+    final isExpired = controller.isPucExpired(puc);
+
     return GestureDetector(
-      onLongPress: () => showInsuranceMenu(ins),
+      onLongPress: () => showMenu(context, puc),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isExpired!
-              ? Colors.red.withValues(alpha: 0.1)
-              : Colors.white.withOpacity(0.1),
+          color:
+              isExpired
+                  ? Colors.red.withValues(alpha: 0.1)
+                  : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Insurance Photo
             InkWell(
-              onTap: () => viewImage(ins.photoPath),
+              onTap: () => viewImage(Get.context!, puc.photoPath),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: ins.photoPath.isNotEmpty
-                    ? Image.file(
-                        File(ins.photoPath),
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        width: double.infinity,
-                        height: 180,
-                        color: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.image,
-                          color: Colors.white,
-                          size: 50,
+                child:
+                    puc.photoPath.isNotEmpty
+                        ? Image.file(
+                          File(puc.photoPath),
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                        : Container(
+                          height: 180,
+                          color: Colors.grey,
+                          child: const Icon(Icons.image),
                         ),
-                      ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
-              "Start From: ${THelper.formatDate(ins.buyDate)}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              "Start: ${THelper.formatDate(puc.buyDate)}",
+              style: const TextStyle(color: Colors.white),
             ),
-            const SizedBox(height: 4),
             Text(
-              "Valid Upto:  ${THelper.formatDate(ins.validUpto)}",
-              style: const TextStyle(
-                color: Colors.deepOrange,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              "Expiry: ${THelper.formatDate(puc.validUpto)}",
+              style: const TextStyle(color: Colors.orange),
             ),
           ],
         ),
@@ -176,48 +112,41 @@ class _PucListScreenState extends ConsumerState<PucListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expiry = ref.watch(expiryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text("Insurance History")),
+      appBar: AppBar(title: const Text('PUC History')),
       body: Container(
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xff1f1c2c), Color(0xff928dab)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
           ),
         ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : insurances.isEmpty
-            ? const Center(
-                child: Text(
-                  "No insurance records",
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              )
-            : ListView.builder(
-                itemCount: insurances.length,
-                itemBuilder: (context, index) {
-                  bool isExpired = expiry.any(
-                    (r) => r.vehicleId == insurances[index].vehicleId,
-                  );
-                  return buildInsuranceCard(
-                    insurances[index],
-                    isExpired: isExpired,
-                  );
-                },
+        child: Obx(() {
+          final pucs = controller.getPucByVehicle(vehicleId);
+
+          if (pucs.isEmpty) {
+            return const Center(
+              child: Text(
+                "No PUC records",
+                style: TextStyle(color: Colors.white),
               ),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: pucs.length,
+            itemBuilder: (_, i) => buildCard(pucs[i], context),
+          );
+        }),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => AddPucScreen(vehicleId: widget.vehicleId),
+              builder: (_) => AddPucScreen(vehicleId: vehicleId),
             ),
-          ).then((_) => loadPuc());
+          );
         },
         child: const Icon(Icons.add),
       ),
