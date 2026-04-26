@@ -121,16 +121,14 @@ class _VehiclesListScreenState extends ConsumerState<VehiclesListScreen> {
                                   ),
                                 )
                                 : Obx(() {
+                                  final vehicles = vehicleController.vehicles;
                                   return ListView.separated(
-                                    itemCount:
-                                        vehicleController.vehicles.length,
+                                    itemCount: vehicles.length,
                                     separatorBuilder:
                                         (_, __) => const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
                                       final vehicle =
                                           vehicleController.vehicles[index];
-
-                                  
 
                                       return VehicleCard(
                                         vehicleWrapper: vehicle,

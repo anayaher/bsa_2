@@ -75,31 +75,6 @@ class VehicleCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             /// 🔴 BADGES (only if expired)
-                            if (vehicleWrapper.hasAnyExpired)
-                              Row(
-                                children: [
-                                  if (vehicleWrapper.isInsuranceExpired)
-                                    _badge(
-                                      text: "Insurance Expired",
-                                      color: Colors.red,
-                                      icon: Icons.warning_rounded,
-                                    ),
-
-                                  if (vehicleWrapper.isInsuranceExpired &&
-                                      vehicleWrapper.isPucExpired)
-                                    const SizedBox(width: 6),
-
-                                  if (vehicleWrapper.isPucExpired)
-                                    _badge(
-                                      text: "PUC Expired",
-                                      color: Colors.red,
-                                      icon: Icons.warning_rounded,
-                                    ),
-                                ],
-                              ),
-
-                            if (vehicleWrapper.hasAnyExpired)
-                              const SizedBox(height: 6),
 
                             /// VEHICLE NAME
                             Text(
@@ -121,6 +96,30 @@ class VehicleCard extends StatelessWidget {
                                 color: Colors.white.withOpacity(0.8),
                               ),
                             ),
+                            if (vehicleWrapper.hasAnyExpired)
+                              const SizedBox(height: 6),
+                            if (vehicleWrapper.hasAnyExpired)
+                              Wrap(
+                                children: [
+                                  if (vehicleWrapper.isInsuranceExpired)
+                                    _badge(
+                                      text: "Insurance Expired",
+                                      color: Colors.red,
+                                      icon: Icons.warning_rounded,
+                                    ),
+
+                                  if (vehicleWrapper.isInsuranceExpired &&
+                                      vehicleWrapper.isPucExpired)
+                                    const SizedBox(width: 6),
+
+                                  if (vehicleWrapper.isPucExpired)
+                                    _badge(
+                                      text: "PUC Expired",
+                                      color: Colors.red,
+                                      icon: Icons.warning_rounded,
+                                    ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
