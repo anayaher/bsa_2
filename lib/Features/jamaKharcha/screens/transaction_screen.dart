@@ -1,4 +1,5 @@
 import 'package:BSA/Features/Home/Screens/home_provider.dart';
+import 'package:BSA/Features/jamaKharcha/screens/transaction_report.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -458,6 +459,17 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
             IconButton(
               onPressed: () => setState(() => _showSearch = !_showSearch),
               icon: Icon(_showSearch ? Icons.close : Icons.search),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TransactionReportScreen(),
+                  ),
+                );
+              },
+              icon: Icon(Icons.picture_as_pdf),
             ),
           ],
           bottom: PreferredSize(

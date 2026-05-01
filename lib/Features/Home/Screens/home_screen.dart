@@ -6,12 +6,14 @@ import 'package:BSA/Features/Salary/Screens/salary_screen.dart';
 import 'package:BSA/Features/Salary/db/deduction_db.dart';
 import 'package:BSA/Features/Salary/db/salary_db.dart';
 import 'package:BSA/Features/Savings/screens/savings_main_screen.dart';
+import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
 import 'package:BSA/Features/Vehicles/screens/vehicles_list_screen.dart';
 import 'package:BSA/Features/jamaKharcha/screens/add_payee.dart';
 import 'package:BSA/Features/jamaKharcha/screens/transaction_screen.dart';
 import 'package:BSA/core/services/local_data_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   double get netBalance => totalJama - totalKharcha;
 
+  final controller = Get.put(VehicleController());
   @override
   void initState() {
     // TODO: implement initState
@@ -44,7 +47,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: $e")),
         data: (home) {
-          final expiredCount = home.expiredCount;
           totalJama = home.totalJama;
           totalKharcha = home.totalKharcha;
 
@@ -60,22 +62,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _jamaKharchaHighlightCard(),
 
                 const SizedBox(height: 20),
-                _vehicleCard(
-                  badgeCount: expiredCount,
-                  title: "Vehicles",
-                  isVehicleCard: true,
-                  icon: Icons.two_wheeler,
-                  color: Colors.blue.shade50,
-                  iconColor: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const VehiclesListScreen(),
-                      ),
-                    );
-                  },
-                ),
+                Obx(() {
+                  return _vehicleCard(
+                    badgeCount: controller.expiredVehicles.length,
+                    title: "Vehicles",
+                    isVehicleCard: true,
+                    icon: Icons.two_wheeler,
+                    color: Colors.blue.shade50,
+                    iconColor: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const VehiclesListScreen(),
+                        ),
+                      );
+                    },
+                  );
+                }),
                 const SizedBox(height: 20),
 
                 _loanCard(

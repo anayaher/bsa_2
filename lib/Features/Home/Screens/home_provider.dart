@@ -2,7 +2,7 @@ import 'package:BSA/Models/vehicle_expiry_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:BSA/Features/Vehicles/db/vehicle_db.dart';
-import 'package:BSA/Features/Insurance/data/insurance_db.dart';
+import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
 import 'package:BSA/Features/Salary/db/salary_db.dart';
 import 'package:BSA/Features/Salary/db/deduction_db.dart';
 import 'package:BSA/Features/jamaKharcha/db/transaction_db.dart';

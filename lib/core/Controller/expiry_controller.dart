@@ -1,10 +1,19 @@
 import 'package:BSA/Models/insurance_model.dart';
+import 'package:BSA/Models/puc_model.dart';
 import 'package:BSA/Models/vehicle_expiry_model.dart';
 import 'package:BSA/Models/vehicle_model.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 class ExpiryNotifier extends StateNotifier<List<VehicleExpiryStatus>> {
   ExpiryNotifier() : super([]);
+
+  Future<void> checkPucExpiry({required List<PucModel> allPucs}) async{
+ final today = DateTime.now();
+
+ 
+
+
+  }
 
   /// Main function to call on startup
   Future<void> checkAllExpiry({
@@ -16,25 +25,17 @@ class ExpiryNotifier extends StateNotifier<List<VehicleExpiryStatus>> {
 
     for (var v in vehicles) {
       // --- PUC expiry ---
-      DateTime pucExpiry = DateTime.parse(v.pucValidUpto);
-      ExpiryStatus pucStatus;
-      if (pucExpiry.isBefore(today)) {
-        pucStatus = ExpiryStatus.expired;
-      } else if (pucExpiry.difference(today).inDays <= 30) {
-        pucStatus = ExpiryStatus.nearExpiry;
-      } else {
-        pucStatus = ExpiryStatus.valid;
-      }
 
       // --- Insurance expiry ---
       final ins = insurances.firstWhere(
         (i) => i.vehicleId == v.id,
-        orElse: () => InsuranceModel(
-          vehicleId: v.id!,
-          buyDate: "",
-          validUpto: "3000-01-01",
-          photoPath: "",
-        ),
+        orElse:
+            () => InsuranceModel(
+              vehicleId: v.id!,
+              buyDate: "",
+              validUpto: "3000-01-01",
+              photoPath: "",
+            ),
       );
 
       DateTime insExpiry = DateTime.parse(ins.validUpto);
@@ -51,18 +52,18 @@ class ExpiryNotifier extends StateNotifier<List<VehicleExpiryStatus>> {
       result.add(
         VehicleExpiryStatus(
           vehicleId: v.id!,
-          pucStatus: pucStatus,
+          pucStatus:
+              ExpiryStatus.valid, // Placeholder, implement PUC logic similarly
           insuranceStatus: insuranceStatus,
         ),
       );
     }
 
-
     state = result;
   }
 }
+
 final expiryProvider =
     StateNotifierProvider<ExpiryNotifier, List<VehicleExpiryStatus>>(
-  (ref) => ExpiryNotifier(),
-);
-
+      (ref) => ExpiryNotifier(),
+    );

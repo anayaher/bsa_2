@@ -1,34 +1,28 @@
 import 'dart:io';
 import 'package:BSA/Features/Vehicles/controllers/vehicle_controller.dart';
-import 'package:BSA/Features/Vehicles/db/insurance_db.dart';
-import 'package:BSA/Models/insurance_model.dart';
+import 'package:BSA/Features/Vehicles/db/puc_db.dart';
+import 'package:BSA/Models/puc_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 
-class AddInsuranceScreen extends StatefulWidget {
+class AddPucScreen extends StatefulWidget {
   final int vehicleId;
-  final InsuranceModel? insurance;
+  final PucModel? insurance;
 
-  const AddInsuranceScreen({
-    super.key,
-    required this.vehicleId,
-    this.insurance,
-  });
+  const AddPucScreen({super.key, required this.vehicleId, this.insurance});
 
   @override
-  State<AddInsuranceScreen> createState() => _AddInsuranceScreenState();
+  State<AddPucScreen> createState() => _AddPucScreenState();
 }
 
-class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
+class _AddPucScreenState extends State<AddPucScreen> {
   DateTime? boughtDate;
   DateTime? validUpto;
-  File? insurancePhoto;
+  File? pucPhoto;
 
   final ImagePicker picker = ImagePicker();
-
-  final controller = Get.put(VehicleController());
+  final controller = Get.find<VehicleController>();
 
   @override
   void initState() {
@@ -36,13 +30,33 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
     if (widget.insurance != null) {
       boughtDate = DateTime.parse(widget.insurance!.buyDate);
       validUpto = DateTime.parse(widget.insurance!.validUpto);
-      insurancePhoto = File(widget.insurance!.photoPath);
+      pucPhoto = File(widget.insurance!.photoPath);
     }
   }
 
   Future<void> pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => insurancePhoto = File(picked.path));
+    if (picked != null) setState(() => pucPhoto = File(picked.path));
+  }
+
+  Future<void> save() async {
+    if (!validate()) return;
+
+    final puc = PucModel(
+      id: widget.insurance?.id,
+      vehicleId: widget.vehicleId,
+      buyDate: boughtDate!.toIso8601String(),
+      validUpto: validUpto!.toIso8601String(),
+      photoPath: pucPhoto!.path,
+    );
+
+    if (widget.insurance == null) {
+      await controller.addPuc(puc);
+    } else {
+      await controller.updatePuc(puc);
+    }
+
+    Navigator.pop(context);
   }
 
   Future<void> pickDate(Function(DateTime) onSelected) async {
@@ -77,10 +91,10 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
       return false;
     }
 
-    if (insurancePhoto == null) {
+    if (pucPhoto == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Upload insurance photo"),
+          content: Text("Upload PUC photo"),
           backgroundColor: Colors.red,
         ),
       );
@@ -94,9 +108,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.insurance == null ? "Add Insurance" : "Update Insurance",
-        ),
+        title: Text(widget.insurance == null ? "Add PUC" : "Update PUC"),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -164,7 +176,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Insurance Photo",
+                "PUC Photo",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -180,7 +192,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                   color: Colors.grey.shade100,
                 ),
                 child:
-                    insurancePhoto == null
+                    pucPhoto == null
                         ? const Center(
                           child: Text(
                             "Tap to upload photo",
@@ -189,7 +201,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                         )
                         : ClipRRect(
                           borderRadius: BorderRadius.circular(14),
-                          child: Image.file(insurancePhoto!, fit: BoxFit.cover),
+                          child: Image.file(pucPhoto!, fit: BoxFit.cover),
                         ),
               ),
             ),
@@ -199,25 +211,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () async {
-                  if (!validate()) return;
-
-                  InsuranceModel ins = InsuranceModel(
-                    vehicleId: widget.vehicleId,
-                    buyDate: boughtDate!.toIso8601String(),
-                    validUpto: validUpto!.toIso8601String(),
-                    photoPath: insurancePhoto!.path,
-                  );
-
-                  if (widget.insurance == null) {
-                    await controller.addInsurance(ins);
-                  } else {
-                    await controller.updateInsurance(ins);
-                  }
-
-                  await controller.loadVehicles();
-                  Navigator.pop(context);
-                },
+                onPressed: save,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -225,9 +219,7 @@ class _AddInsuranceScreenState extends State<AddInsuranceScreen> {
                   ),
                 ),
                 child: Text(
-                  widget.insurance == null
-                      ? "Add Insurance"
-                      : "Update Insurance",
+                  widget.insurance == null ? "Add PUC" : "Update PUC",
                 ),
               ),
             ),

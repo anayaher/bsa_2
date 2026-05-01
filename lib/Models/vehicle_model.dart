@@ -14,9 +14,9 @@ class VehicleModel {
 
   
 
-  String pucDate;
-  String pucValidUpto;
-  String pucPhoto;
+  String? pucDate;
+  String? pucValidUpto;
+  String? pucPhoto;
 
   String? chassis;
   String? engine;
@@ -31,9 +31,9 @@ class VehicleModel {
     required this.vehiclePhoto,
     required this.rcFront,
     required this.rcBack,
-    required this.pucDate,
-    required this.pucValidUpto,
-    required this.pucPhoto,
+     this.pucDate,
+     this.pucValidUpto,
+     this.pucPhoto,
     this.chassis,
     this.engine,
   });
@@ -49,9 +49,7 @@ class VehicleModel {
       "vehiclePhoto": vehiclePhoto,
       "rcFront": rcFront,
       "rcBack": rcBack,
-      "pucDate": pucDate,
-      "pucValidUpto": pucValidUpto,
-      "pucPhoto": pucPhoto,
+   
       "chassis": chassis,
       "engine": engine,
     };
@@ -68,9 +66,7 @@ class VehicleModel {
       vehiclePhoto: map["vehiclePhoto"],
       rcFront: map["rcFront"],
       rcBack: map["rcBack"],
-      pucDate: map["pucDate"],
-      pucValidUpto: map["pucValidUpto"],
-      pucPhoto: map["pucPhoto"],
+    
       chassis: map["chassis"],
       engine: map["engine"],
     );

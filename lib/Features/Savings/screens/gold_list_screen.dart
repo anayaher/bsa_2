@@ -120,20 +120,20 @@ class _GoldListScreenState extends State<GoldListScreen> {
       return;
     }
 
-    final PdfDocument document = PdfDocument();
-    final PdfFont titleFont = PdfStandardFont(
+    final document = PdfDocument();
+    final titleFont = PdfStandardFont(
       PdfFontFamily.helvetica,
       22,
       style: PdfFontStyle.bold,
     );
-    final PdfFont headerFont = PdfStandardFont(
+    final headerFont = PdfStandardFont(
       PdfFontFamily.helvetica,
       12,
       style: PdfFontStyle.bold,
     );
-    final PdfFont bodyFont = PdfStandardFont(PdfFontFamily.helvetica, 11);
+    final bodyFont = PdfStandardFont(PdfFontFamily.helvetica, 11);
 
-    final PdfPage page = document.pages.add();
+    final page = document.pages.add();
     final graphics = page.graphics;
     double yOffset = 0;
 
@@ -179,6 +179,9 @@ class _GoldListScreenState extends State<GoldListScreen> {
     );
 
     double grandTotal = 0;
+    double totalWeight = 0;
+    double totalMaking = 0;
+    double totalGst = 0;
 
     for (final g in filtered) {
       final row = grid.rows.add();
@@ -193,6 +196,9 @@ class _GoldListScreenState extends State<GoldListScreen> {
       final gstAmount = (goldValue + makingTotal) * gst / 100;
       final total = double.tryParse(g.totalCost) ?? 0;
 
+      totalWeight += weight;
+      totalMaking += makingTotal;
+      totalGst += gstAmount;
       grandTotal += total;
 
       row.cells[0].value = g.date;
@@ -205,6 +211,30 @@ class _GoldListScreenState extends State<GoldListScreen> {
       row.style = PdfGridRowStyle(font: bodyFont);
     }
 
+    // -------- TOTAL ROW --------
+    final totalRow = grid.rows.add();
+    totalRow.cells[0].value = 'TOTAL';
+    totalRow.cells[1].value = totalWeight.toStringAsFixed(2);
+    totalRow.cells[2].value = '-';
+    totalRow.cells[3].value = currency.format(totalMaking);
+    totalRow.cells[4].value = currency.format(totalGst);
+    totalRow.cells[5].value = currency.format(grandTotal);
+
+    totalRow.style = PdfGridRowStyle(
+      font: PdfStandardFont(
+        PdfFontFamily.helvetica,
+        11,
+        style: PdfFontStyle.bold,
+      ),
+      backgroundBrush: PdfBrushes.lightGray,
+    );
+
+    for (int i = 1; i < 6; i++) {
+      totalRow.cells[i].stringFormat = PdfStringFormat(
+        alignment: PdfTextAlignment.right,
+      );
+    }
+
     final result =
         grid.draw(
           page: page,
@@ -213,30 +243,23 @@ class _GoldListScreenState extends State<GoldListScreen> {
 
     yOffset = result.bounds.bottom + 20;
 
-    graphics.drawString(
-      'Grand Total: ${currency.format(grandTotal)}',
-      PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.bold),
-      bounds: Rect.fromLTWH(page.getClientSize().width - 250, yOffset, 250, 30),
-      format: PdfStringFormat(alignment: PdfTextAlignment.right),
-    );
-
     final bytes = Uint8List.fromList(document.saveSync());
     document.dispose();
 
-    // ---- SAVE FILE ----
     final dir = await getGoldReportDirectory();
-    final date = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+    final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     final fileName =
         userName == null
             ? 'all_$date.pdf'
             : '${userName.replaceAll(' ', '_')}_$date.pdf';
 
-    final file = File("${dir.path}/$fileName");
+    final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
 
-    // ---- PREVIEW ----
     await Printing.layoutPdf(onLayout: (_) async => bytes);
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(
       context,
@@ -280,7 +303,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final item = items[index];
-
               return _GoldCard(
                 item: item,
                 index: index,
