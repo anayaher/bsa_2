@@ -23,7 +23,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
   Future<Directory> getGoldReportDirectory() async {
     final dir = await getApplicationDocumentsDirectory();
     final reportDir = Directory('${dir.path}/goldReports');
-
     if (!await reportDir.exists()) {
       await reportDir.create(recursive: true);
     }
@@ -32,6 +31,48 @@ class _GoldListScreenState extends State<GoldListScreen> {
 
   void _loadGold() {
     _goldFuture = GoldDB.instance.fetchGold();
+  }
+
+  // ---------------- DELETE ----------------
+
+  Future<void> _confirmDelete(GoldItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Delete Gold Entry'),
+            content: Text(
+              'Are you sure you want to delete "${item.item}" purchased on ${item.date}?\n\nThis action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true && item.id != null) {
+      await GoldDB.instance.deleteGold(item.id!);
+      setState(_loadGold);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('"${item.item}" deleted successfully'),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    }
   }
 
   // ---------------- PDF FLOW ----------------
@@ -65,7 +106,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
 
   Future<void> _selectUserAndGenerate() async {
     final goldItems = await GoldDB.instance.fetchGold();
-
     final users =
         goldItems
             .map((e) => e.userName?.trim())
@@ -142,7 +182,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
       titleFont,
       bounds: Rect.fromLTWH(0, yOffset, page.getClientSize().width, 40),
     );
-
     yOffset += 30;
 
     graphics.drawString(
@@ -150,7 +189,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
       bodyFont,
       bounds: Rect.fromLTWH(0, yOffset, page.getClientSize().width, 20),
     );
-
     yOffset += 18;
 
     graphics.drawString(
@@ -158,7 +196,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
       bodyFont,
       bounds: Rect.fromLTWH(0, yOffset, page.getClientSize().width, 20),
     );
-
     yOffset += 25;
 
     final PdfGrid grid = PdfGrid();
@@ -185,12 +222,10 @@ class _GoldListScreenState extends State<GoldListScreen> {
 
     for (final g in filtered) {
       final row = grid.rows.add();
-
       final weight = double.tryParse(g.weight) ?? 0;
       final rate = double.tryParse(g.rate) ?? 0;
       final making = double.tryParse(g.making) ?? 0;
       final gst = double.tryParse(g.gst) ?? 0;
-
       final goldValue = weight * rate;
       final makingTotal = weight * making;
       final gstAmount = (goldValue + makingTotal) * gst / 100;
@@ -207,11 +242,9 @@ class _GoldListScreenState extends State<GoldListScreen> {
       row.cells[3].value = currency.format(makingTotal);
       row.cells[4].value = currency.format(gstAmount);
       row.cells[5].value = currency.format(total);
-
       row.style = PdfGridRowStyle(font: bodyFont);
     }
 
-    // -------- TOTAL ROW --------
     final totalRow = grid.rows.add();
     totalRow.cells[0].value = 'TOTAL';
     totalRow.cells[1].value = totalWeight.toStringAsFixed(2);
@@ -235,20 +268,16 @@ class _GoldListScreenState extends State<GoldListScreen> {
       );
     }
 
-    final result =
-        grid.draw(
-          page: page,
-          bounds: Rect.fromLTWH(0, yOffset, page.getClientSize().width, 0),
-        )!;
-
-    yOffset = result.bounds.bottom + 20;
+    grid.draw(
+      page: page,
+      bounds: Rect.fromLTWH(0, yOffset, page.getClientSize().width, 0),
+    );
 
     final bytes = Uint8List.fromList(document.saveSync());
     document.dispose();
 
     final dir = await getGoldReportDirectory();
     final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
     final fileName =
         userName == null
             ? 'all_$date.pdf'
@@ -260,7 +289,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
     await Printing.layoutPdf(onLayout: (_) async => bytes);
 
     if (!mounted) return;
-
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Saved to Gold Reports: $fileName')));
@@ -303,10 +331,47 @@ class _GoldListScreenState extends State<GoldListScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final item = items[index];
-              return _GoldCard(
-                item: item,
-                index: index,
-                onTap: () => _openAddEdit(item),
+
+              // ---- SWIPE TO DELETE WRAPPER ----
+              return Dismissible(
+                key: ValueKey(item.id),
+                direction: DismissDirection.endToStart,
+                // Intercept the dismiss and show a dialog instead of
+                // letting the widget auto-remove itself
+                confirmDismiss: (_) async {
+                  await _confirmDelete(item);
+                  // Always return false so Dismissible never removes
+                  // the tile itself — _confirmDelete calls setState
+                  return false;
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade400,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                      SizedBox(height: 4),
+                      Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                child: _GoldCard(
+                  item: item,
+                  index: index,
+                  onTap: () => _openAddEdit(item),
+                ),
               );
             },
           );
@@ -320,7 +385,6 @@ class _GoldListScreenState extends State<GoldListScreen> {
       context,
       MaterialPageRoute(builder: (_) => AddEditGoldScreen(goldItem: item)),
     );
-
     if (result == true) {
       setState(_loadGold);
     }
